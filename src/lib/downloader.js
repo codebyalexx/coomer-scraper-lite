@@ -1,12 +1,16 @@
 import fs from "fs";
 import https from "https";
 import { URL } from "url";
+import redisClient from "./redis";
 
-export function downloadFile(attachment, redirectCount = 0) {
+export async function downloadFile(attachment, redirectCount = 0) {
   const { url, path, filename, outputPath, outputFilename, outputFilePath } =
     attachment;
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     if (fs.existsSync(outputFilePath)) return resolve();
+
+    const skipKey = await redisClient.get(`skip-download:${outputFilePath}`);
+    if (skipKey) return reject(new Error("File skipped"));
 
     if (redirectCount > 1) {
       return reject(new Error("Too many redirects"));
@@ -41,6 +45,14 @@ export function downloadFile(attachment, redirectCount = 0) {
         );
       }
 
+      /** Timeout */
+      const timeout = setTimeout(async () => {
+        await redisClient.set(`skip-download:${outputFilePath}`, "true", {
+          expiration: 1000 * 60 * 60 * 24,
+        });
+        return reject(new Error("Time exceeded, trying later."));
+      }, 1000 * 120);
+
       /** Download process */
       fs.mkdirSync(outputPath, { recursive: true });
       const fileStream = fs.createWriteStream(outputFilePath);
@@ -51,12 +63,15 @@ export function downloadFile(attachment, redirectCount = 0) {
         setTimeout(() => {
           fileStream.close(() => resolve());
         }, 300);
+        clearTimeout(timeout);
       });
       request.on("error", (err) => {
         fs.unlink(outputFilePath, () => reject(err));
+        clearTimeout(timeout);
       });
       fileStream.on("error", (err) => {
         fs.unlink(outputFilePath, () => reject(err));
+        clearTimeout(timeout);
       });
     });
   });
