@@ -22,69 +22,75 @@ async function main() {
       const posts = await getAllArtistPosts(artist);
       console.log(">> Found " + posts.length + " posts");
 
-      const selectedPosts = posts.length > 300 ? posts.slice(0, 300) : posts;
+      const selectedPosts = posts.length > 150 ? posts.slice(0, 150) : posts;
 
-      for (const post of selectedPosts) {
-        try {
-          const postContent = await getPostContent(artist, post.id);
+      const postLimit = pLimit(4);
 
-          console.log("post", post.id, "fetch OK");
+      const postTasks = selectedPosts.map((post) =>
+        postLimit(async () => {
+          try {
+            const postContent = await getPostContent(artist, post.id);
 
-          let attachments = [];
-          if (postContent?.post?.attachments)
-            attachments = [...attachments, ...postContent.post.attachments];
-          if (postContent?.videos)
-            attachments = [...attachments, ...postContent.videos];
+            console.log("post", post.id, "fetch OK");
 
-          console.log(
-            "post",
-            post.id,
-            "found",
-            attachments.length,
-            "attachments"
-          );
+            let attachments = [];
+            if (postContent?.post?.attachments)
+              attachments = [...attachments, ...postContent.post.attachments];
+            if (postContent?.videos)
+              attachments = [...attachments, ...postContent.videos];
 
-          const parsedAttachments = attachments.map((attachment) => {
-            return {
-              url: `https://coomer.su/data${attachment.path}`,
-              path: "/data/" + attachment.path,
-              filename: attachment.name,
-              outputPath: path.join(
-                "/mnt/freebox/app/cs-v2/downloads/",
-                profile.id
-              ),
-              outputFilename: attachment.name,
-              outputFilePath: path.join(
-                "/mnt/freebox/app/cs-v2/downloads/",
-                profile.id,
-                attachment.name
-              ),
-            };
-          });
+            console.log(
+              "post",
+              post.id,
+              "found",
+              attachments.length,
+              "attachments"
+            );
 
-          const limit = pLimit(5);
+            const parsedAttachments = attachments.map((attachment) => {
+              return {
+                url: `https://coomer.su/data${attachment.path}`,
+                path: "/data/" + attachment.path,
+                filename: attachment.name,
+                outputPath: path.join(
+                  "/mnt/freebox/app/cs-v2/downloads/",
+                  profile.id
+                ),
+                outputFilename: attachment.name,
+                outputFilePath: path.join(
+                  "/mnt/freebox/app/cs-v2/downloads/",
+                  profile.id,
+                  attachment.name
+                ),
+              };
+            });
 
-          const tasks = parsedAttachments.map((attachment) =>
-            limit(async () => {
-              try {
-                console.log("attachment", attachment.filename);
-                await downloadFile(attachment);
-              } catch (e) {
-                console.error(
-                  "attachment",
-                  attachment.filename,
-                  "failed, error:",
-                  e
-                );
-              }
-            })
-          );
+            const attachmentLimit = pLimit(2);
 
-          await Promise.all(tasks);
-        } catch (e) {
-          console.error("post", post.id, "failed, error:", e);
-        }
-      }
+            const attachmentTasks = parsedAttachments.map((attachment) =>
+              attachmentLimit(async () => {
+                try {
+                  console.log("attachment", attachment.filename);
+                  await downloadFile(attachment);
+                } catch (e) {
+                  console.error(
+                    "attachment",
+                    attachment.filename,
+                    "failed, error:",
+                    e
+                  );
+                }
+              })
+            );
+
+            await Promise.all(attachmentTasks);
+          } catch (e) {
+            console.error("post", post.id, "failed, error:", e);
+          }
+        })
+      );
+
+      await Promise.all(postTasks);
     } catch (e) {
       console.error("artist", artist, "failed, error:", e);
     }
