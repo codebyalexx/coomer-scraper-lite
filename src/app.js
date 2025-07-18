@@ -6,6 +6,7 @@ import {
   getPostContent,
 } from "./lib/api.js";
 import { downloadFile } from "./lib/downloader.js";
+import pLimit from "p-limit";
 
 const artists = JSON.parse(
   fs.readFileSync(path.join(process.cwd(), "data/artists.json"), "utf-8")
@@ -61,24 +62,26 @@ async function main() {
             };
           });
 
-          for (const attachment of parsedAttachments) {
-            try {
-              console.log("attachment", attachment.filename);
-              await downloadFile(attachment);
-              await new Promise((resolve) =>
-                setTimeout(() => {
-                  resolve();
-                }, 100)
-              );
-            } catch (e) {
-              console.error(
-                "attachment",
-                attachment.filename,
-                "failed, error:",
-                e
-              );
-            }
-          }
+          const limit = pLimit(5);
+
+          const tasks = parsedAttachments.map((attachment) =>
+            limit(async () => {
+              try {
+                console.log("attachment", attachment.filename);
+                await downloadFile(attachment);
+                await new Promise((resolve) => setTimeout(resolve, 300));
+              } catch (e) {
+                console.error(
+                  "attachment",
+                  attachment.filename,
+                  "failed, error:",
+                  e
+                );
+              }
+            })
+          );
+
+          await Promise.all(tasks);
 
           await new Promise((resolve) =>
             setTimeout(() => {
