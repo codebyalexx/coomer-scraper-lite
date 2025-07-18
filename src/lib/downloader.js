@@ -1,7 +1,7 @@
 import fs from "fs";
 import https from "https";
 import { URL } from "url";
-import redisClient from "./redis";
+import redisClient from "./redis.js";
 
 export async function downloadFile(attachment, redirectCount = 0) {
   const { url, path, filename, outputPath, outputFilename, outputFilePath } =
