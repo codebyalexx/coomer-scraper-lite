@@ -75,7 +75,7 @@ export async function getArtistPosts(artistUrl, offset = 0) {
   const data = await response.json();
 
   await redis.set(`posts:${artistUrl}:${offset}`, JSON.stringify(data));
-  await new Promise((resolve) => setTimeout(resolve, 250));
+  await new Promise((resolve) => setTimeout(resolve, 400));
 
   return data.map((el) => ({
     id: el.id,
@@ -100,7 +100,7 @@ export async function getPostContent(artistUrl, postId) {
   const data = await response.json();
 
   await redis.set(`post:${artistUrl}:${postId}`, JSON.stringify(data));
-  await new Promise((resolve) => setTimeout(resolve, 250));
+  await new Promise((resolve) => setTimeout(resolve, 400));
 
   return data;
 }
