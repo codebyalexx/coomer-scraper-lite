@@ -1,0 +1,21 @@
+{
+  "name": "cs-v2-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node src/app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.11.0",
+  "type": "module",
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "ink": "^6.0.1",
+    "path": "^0.12.7",
+    "react": "^19.1.0",
+    "tsx": "^4.20.3"
+  }
+}
