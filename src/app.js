@@ -69,7 +69,6 @@ async function main() {
               try {
                 console.log("attachment", attachment.filename);
                 await downloadFile(attachment);
-                await new Promise((resolve) => setTimeout(resolve, 300));
               } catch (e) {
                 console.error(
                   "attachment",
@@ -82,22 +81,10 @@ async function main() {
           );
 
           await Promise.all(tasks);
-
-          await new Promise((resolve) =>
-            setTimeout(() => {
-              resolve();
-            }, 350)
-          );
         } catch (e) {
           console.error("post", post.id, "failed, error:", e);
         }
       }
-
-      await new Promise((resolve) =>
-        setTimeout(() => {
-          resolve();
-        }, 1000)
-      );
     } catch (e) {
       console.error("artist", artist, "failed, error:", e);
     }

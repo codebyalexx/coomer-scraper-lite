@@ -15,6 +15,7 @@ export function downloadFile(attachment, redirectCount = 0) {
     console.log(">", url);
 
     const request = https.get(url, (response) => {
+      /** Redirection handler */
       if (
         response.statusCode &&
         response.statusCode >= 300 &&
@@ -31,6 +32,7 @@ export function downloadFile(attachment, redirectCount = 0) {
           .catch(reject);
       }
 
+      /** Fails handler */
       if (response.statusCode !== 200) {
         return reject(
           new Error(
@@ -39,30 +41,20 @@ export function downloadFile(attachment, redirectCount = 0) {
         );
       }
 
+      /** Download process */
       fs.mkdirSync(outputPath, { recursive: true });
-
-      if (fs.existsSync(outputFilePath)) return resolve();
-
       const fileStream = fs.createWriteStream(outputFilePath);
-      const totalSize = parseInt(response.headers["content-length"] || "0", 10);
-      let downloadedSize = 0;
-
-      response.on("data", (chunk) => {
-        downloadedSize += chunk.length;
-        const fileProgress = (downloadedSize / totalSize) * 100;
-        //console.log(">>> " + filename + " " + fileProgress.toFixed(2) + "%");
-      });
 
       response.pipe(fileStream);
 
       fileStream.on("finish", () => {
-        fileStream.close(() => resolve());
+        setTimeout(() => {
+          fileStream.close(() => resolve());
+        }, 300);
       });
-
       request.on("error", (err) => {
         fs.unlink(outputFilePath, () => reject(err));
       });
-
       fileStream.on("error", (err) => {
         fs.unlink(outputFilePath, () => reject(err));
       });

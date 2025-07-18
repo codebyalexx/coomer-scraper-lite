@@ -1,3 +1,5 @@
+import redis from "./redis.js";
+
 const apiBaseURL = "https://coomer.su/api";
 
 export function getArtistDetailsFromURL(artistUrl) {
@@ -9,6 +11,10 @@ export function getArtistDetailsFromURL(artistUrl) {
 
 export async function getArtistProfile(artistUrl) {
   const { service, id } = getArtistDetailsFromURL(artistUrl);
+
+  const cached = await redis.get(`profile:${artistUrl}`);
+  if (cached) return JSON.parse(cached);
+
   const response = await fetch(
     `${apiBaseURL}/v1/${service}/user/${id}/profile`
   );
@@ -19,6 +25,9 @@ export async function getArtistProfile(artistUrl) {
   }
 
   const data = await response.json();
+
+  await redis.set(`profile:${artistUrl}`, JSON.stringify(data));
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
   return {
     name: data.name,
@@ -50,6 +59,10 @@ export async function getAllArtistPosts(artistUrl) {
 
 export async function getArtistPosts(artistUrl, offset = 0) {
   const { service, id } = getArtistDetailsFromURL(artistUrl);
+
+  const cached = await redis.get(`posts:${artistUrl}:${offset}`);
+  if (cached) return JSON.parse(cached);
+
   const response = await fetch(
     `${apiBaseURL}/v1/${service}/user/${id}?o=${offset}`
   );
@@ -61,6 +74,9 @@ export async function getArtistPosts(artistUrl, offset = 0) {
 
   const data = await response.json();
 
+  await redis.set(`posts:${artistUrl}:${offset}`, JSON.stringify(data));
+  await new Promise((resolve) => setTimeout(resolve, 250));
+
   return data.map((el) => ({
     id: el.id,
   }));
@@ -68,6 +84,10 @@ export async function getArtistPosts(artistUrl, offset = 0) {
 
 export async function getPostContent(artistUrl, postId) {
   const { service, id } = getArtistDetailsFromURL(artistUrl);
+
+  const cached = await redis.get(`post:${artistUrl}:${postId}`);
+  if (cached) return JSON.parse(cached);
+
   const response = await fetch(
     `${apiBaseURL}/v1/${service}/user/${id}/post/${postId}`
   );
@@ -78,6 +98,9 @@ export async function getPostContent(artistUrl, postId) {
   }
 
   const data = await response.json();
+
+  await redis.set(`post:${artistUrl}:${postId}`, JSON.stringify(data));
+  await new Promise((resolve) => setTimeout(resolve, 250));
 
   return data;
 }
