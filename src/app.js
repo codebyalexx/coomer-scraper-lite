@@ -50,15 +50,12 @@ async function main() {
             const parsedAttachments = attachments.map((attachment) => {
               return {
                 url: `https://coomer.su/data${attachment.path}`,
-                path: "/data/" + attachment.path,
+                path: "/data" + attachment.path,
                 filename: attachment.name,
-                outputPath: path.join(
-                  "/mnt/freebox/app/cs-v2/downloads/",
-                  profile.id
-                ),
+                outputPath: path.join("/app/downloads/", profile.id),
                 outputFilename: attachment.name,
                 outputFilePath: path.join(
-                  "/mnt/freebox/app/cs-v2/downloads/",
+                  "/app/downloads/",
                   profile.id,
                   attachment.name
                 ),
