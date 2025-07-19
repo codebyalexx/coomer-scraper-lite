@@ -7,13 +7,28 @@ import {
 } from "./lib/api.js";
 import { downloadFile } from "./lib/downloader.js";
 import pLimit from "p-limit";
+import redisClient from "./lib/redis.js";
 
 const artists = JSON.parse(
   fs.readFileSync(path.join(process.cwd(), "data/artists.json"), "utf-8")
 );
 const uniqueArtists = [...new Set(artists)];
 
+const artistsExceptions = JSON.parse(
+  fs.readFileSync(
+    path.join(process.cwd(), "data/artists-exceptions.json"),
+    "utf-8"
+  )
+);
+
 async function main() {
+  const postSelectionLimitIncrease = 10;
+  let postSelectionLimit = 150;
+
+  const postSelectionLimitKey = await redisClient.get("post-selection-limit");
+  if (postSelectionLimitKey)
+    postSelectionLimit = parseInt(postSelectionLimitKey);
+
   for (const artist of uniqueArtists) {
     try {
       const profile = await getArtistProfile(artist);
@@ -22,7 +37,14 @@ async function main() {
       const posts = await getAllArtistPosts(artist);
       console.log(">> Found " + posts.length + " posts");
 
-      const selectedPosts = posts.length > 150 ? posts.slice(0, 150) : posts;
+      let selectedPosts =
+        posts.length > postSelectionLimit
+          ? posts.slice(0, postSelectionLimit)
+          : posts;
+
+      if (artistsExceptions.includes(artist)) {
+        selectedPosts = posts;
+      }
 
       const postLimit = pLimit(4);
 
@@ -92,6 +114,11 @@ async function main() {
       console.error("artist", artist, "failed, error:", e);
     }
   }
+
+  // Loop increasing post selection limit
+  postSelectionLimit += postSelectionLimitIncrease;
+  await redisClient.set("post-selection-limit", postSelectionLimit);
+  main();
 }
 
 main();
