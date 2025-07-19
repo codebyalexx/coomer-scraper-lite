@@ -48,8 +48,9 @@ export async function downloadFile(attachment, redirectCount = 0) {
       /** Timeout */
       const timeout = setTimeout(async () => {
         await redisClient.set(`skip-download:${outputFilePath}`, "true", {
-          expiration: 1000 * 60 * 60 * 24,
+          expiration: 60 * 60 * 24,
         });
+        fs.unlinkSync(outputFilePath);
         return reject(new Error("Time exceeded, trying later."));
       }, 1000 * 120);
 
