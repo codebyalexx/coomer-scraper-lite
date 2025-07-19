@@ -1,13 +1,17 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import fs from "fs";
 import path from "path";
 import {
   getAllArtistPosts,
   getArtistProfile,
   getPostContent,
-} from "./lib/api.js";
+} from "./lib/coomer-api.js";
 import { downloadFile } from "./lib/downloader.js";
 import pLimit from "p-limit";
 import redisClient from "./lib/redis.js";
+import { discord } from "./lib/discord.js";
 
 const artists = JSON.parse(
   fs.readFileSync(path.join(process.cwd(), "data/artists.json"), "utf-8")
@@ -121,4 +125,5 @@ async function main() {
   main();
 }
 
+discord();
 main();
