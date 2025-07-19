@@ -17,8 +17,6 @@ export async function downloadFile(attachment, redirectCount = 0) {
       return reject(new Error("Too many redirects"));
     }
 
-    logger.info(">", url);
-
     const request = https.get(url, (response) => {
       /** Redirection handler */
       if (

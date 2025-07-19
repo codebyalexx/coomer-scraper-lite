@@ -24,9 +24,9 @@ export async function discord() {
     const matches = content.match(regex);
 
     if (matches) {
-      logger.info("Received", matches.length, "links from Discord");
+      logger.info(`Received ${matches.length} links from Discord`);
       for (const url of matches) {
-        logger.info("Importing", url);
+        logger.info(`Importing ${url} from Discord...`);
       }
       await message.react("✅");
     }

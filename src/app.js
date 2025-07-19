@@ -77,8 +77,6 @@ async function main() {
           try {
             const postContent = await getPostContent(artist, post.id);
 
-            logger.info("post", post.id, "fetch OK");
-
             let attachments = [];
             if (postContent?.post?.attachments)
               attachments = [...attachments, ...postContent.post.attachments];
@@ -86,11 +84,7 @@ async function main() {
               attachments = [...attachments, ...postContent.videos];
 
             logger.info(
-              "post",
-              post.id,
-              "found",
-              attachments.length,
-              "attachments"
+              `Found ${attachments.length} attachments for post ${post.id}`
             );
 
             const parsedAttachments = attachments.map((attachment) => {
@@ -113,14 +107,13 @@ async function main() {
             const attachmentTasks = parsedAttachments.map((attachment) =>
               attachmentLimit(async () => {
                 try {
-                  logger.info("attachment", attachment.filename);
+                  logger.info(`Downloading attachment ${attachment.filename}`);
                   await downloadFile(attachment);
                 } catch (e) {
                   logger.error(
-                    "attachment",
-                    attachment.filename,
-                    "failed, error:",
-                    e
+                    `Failed to download attachment ${
+                      attachment.filename
+                    }, error: ${e.message || "no error message"}`
                   );
                 }
               })
@@ -128,7 +121,11 @@ async function main() {
 
             await Promise.all(attachmentTasks);
           } catch (e) {
-            logger.error("post", post.id, "failed, error:", e);
+            logger.error(
+              `Failed to process post ${post.id}, error: ${
+                e.message || "no error message"
+              }`
+            );
           } finally {
             artistBar.increment();
           }
@@ -139,7 +136,11 @@ async function main() {
 
       multibar.remove(artistBar);
     } catch (e) {
-      logger.error("artist", artist, "failed, error:", e);
+      logger.error(
+        `Failed to process artist ${artist}, error: ${
+          e.message || "no error message"
+        }`
+      );
     } finally {
       globalProgress.increment();
     }
