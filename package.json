@@ -12,6 +12,8 @@
   "packageManager": "pnpm@10.11.0",
   "type": "module",
   "dependencies": {
+    "cli-color": "^2.0.4",
+    "cli-progress": "^3.12.0",
     "discord.js": "^14.21.0",
     "dotenv": "^17.2.0",
     "fs": "0.0.1-security",
@@ -21,6 +23,7 @@
     "react": "^19.1.0",
     "redis": "^5.6.0",
     "tsx": "^4.20.3",
+    "winston": "^3.17.0",
     "zustand": "^5.0.6"
   }
 }

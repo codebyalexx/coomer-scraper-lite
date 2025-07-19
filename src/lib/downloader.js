@@ -2,6 +2,7 @@ import fs from "fs";
 import https from "https";
 import { URL } from "url";
 import redisClient from "./redis.js";
+import logger from "./logger.js";
 
 export async function downloadFile(attachment, redirectCount = 0) {
   const { url, path, filename, outputPath, outputFilename, outputFilePath } =
@@ -16,7 +17,7 @@ export async function downloadFile(attachment, redirectCount = 0) {
       return reject(new Error("Too many redirects"));
     }
 
-    console.log(">", url);
+    logger.info(">", url);
 
     const request = https.get(url, (response) => {
       /** Redirection handler */

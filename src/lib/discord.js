@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits } from "discord.js";
+import logger from "./logger.js";
 
 export async function discord() {
   const client = new Client({
@@ -11,7 +12,7 @@ export async function discord() {
   });
 
   client.once("ready", () => {
-    console.log(`✅ Connected to Discord API as ${client.user.tag}`);
+    logger.info(`✅ Connected to Discord API as ${client.user.tag}`);
   });
 
   client.on("messageCreate", async (message) => {
@@ -23,9 +24,9 @@ export async function discord() {
     const matches = content.match(regex);
 
     if (matches) {
-      console.log("Received", matches.length, "links from Discord");
+      logger.info("Received", matches.length, "links from Discord");
       for (const url of matches) {
-        console.log("Importing", url);
+        logger.info("Importing", url);
       }
       await message.react("✅");
     }

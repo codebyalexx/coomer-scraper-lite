@@ -12,6 +12,9 @@ import { downloadFile } from "./lib/downloader.js";
 import pLimit from "p-limit";
 import redisClient from "./lib/redis.js";
 import { discord } from "./lib/discord.js";
+import cliProgress from "cli-progress";
+import colors from "cli-color";
+import logger from "./lib/logger.js";
 
 const artists = JSON.parse(
   fs.readFileSync(path.join(process.cwd(), "data/artists.json"), "utf-8")
@@ -33,18 +36,35 @@ async function main() {
   if (postSelectionLimitKey)
     postSelectionLimit = parseInt(postSelectionLimitKey);
 
+  const multibar = new cliProgress.MultiBar({
+    clearOnComplete: false,
+    hideCursor: true,
+    format: "{bar} | {artistName} | {value}/{total} {progressLabel}",
+    fps: 30,
+  });
+
+  const globalProgress = multibar.create(uniqueArtists.length, 0, {
+    artistName: colors.green("GLOBAL PROGRESS"),
+    progressLabel: "artists",
+  });
+
   for (const artist of uniqueArtists) {
     try {
       const profile = await getArtistProfile(artist);
 
-      console.log(">> Now processing " + profile.name + "...");
+      const artistBar = multibar.create(1, 0, {
+        artistName: colors.yellow(profile.name),
+        progressLabel: "posts",
+      });
+
       const posts = await getAllArtistPosts(artist);
-      console.log(">> Found " + posts.length + " posts");
 
       let selectedPosts =
         posts.length > postSelectionLimit
           ? posts.slice(0, postSelectionLimit)
           : posts;
+
+      artistBar.setTotal(selectedPosts.length);
 
       if (artistsExceptions.includes(artist)) {
         selectedPosts = posts;
@@ -57,7 +77,7 @@ async function main() {
           try {
             const postContent = await getPostContent(artist, post.id);
 
-            console.log("post", post.id, "fetch OK");
+            logger.info("post", post.id, "fetch OK");
 
             let attachments = [];
             if (postContent?.post?.attachments)
@@ -65,7 +85,7 @@ async function main() {
             if (postContent?.videos)
               attachments = [...attachments, ...postContent.videos];
 
-            console.log(
+            logger.info(
               "post",
               post.id,
               "found",
@@ -93,10 +113,10 @@ async function main() {
             const attachmentTasks = parsedAttachments.map((attachment) =>
               attachmentLimit(async () => {
                 try {
-                  console.log("attachment", attachment.filename);
+                  logger.info("attachment", attachment.filename);
                   await downloadFile(attachment);
                 } catch (e) {
-                  console.error(
+                  logger.error(
                     "attachment",
                     attachment.filename,
                     "failed, error:",
@@ -108,14 +128,20 @@ async function main() {
 
             await Promise.all(attachmentTasks);
           } catch (e) {
-            console.error("post", post.id, "failed, error:", e);
+            logger.error("post", post.id, "failed, error:", e);
+          } finally {
+            artistBar.increment();
           }
         })
       );
 
       await Promise.all(postTasks);
+
+      multibar.remove(artistBar);
     } catch (e) {
-      console.error("artist", artist, "failed, error:", e);
+      logger.error("artist", artist, "failed, error:", e);
+    } finally {
+      globalProgress.increment();
     }
   }
 
