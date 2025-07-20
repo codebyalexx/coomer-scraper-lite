@@ -2,3 +2,6 @@ data/downloads/
 node_modules/
 
 *.log
+/src/generated/prisma
+
+.env
