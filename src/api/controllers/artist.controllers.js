@@ -80,9 +80,7 @@ const getArtistFile = async (req, res) => {
           return res.status(500).json({ error: "Failed to send file" });
         }
       });
-    }
-
-    if (fileType === "video") {
+    } else if (fileType === "video") {
       const cacheKey = `video:meta:${file.id}`;
       let meta;
 
@@ -128,9 +126,7 @@ const getArtistFile = async (req, res) => {
         res.writeHead(200, head);
         fs.createReadStream(meta.filePath).pipe(res);
       }
-    }
-
-    return res.status(500).json({ error: "File type not supported" });
+    } else return res.status(500).json({ error: "File type not supported" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
