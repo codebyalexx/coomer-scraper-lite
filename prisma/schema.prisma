@@ -23,4 +23,29 @@ model Artist {
   isException Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  posts Post[]
+  files File[]
+}
+
+model Post {
+  id String @id @default(cuid())
+  identifier String
+  files File[]
+
+  artistId String
+  artist Artist @relation(fields: [artistId], references: [id])
+}
+
+model File {
+  id String @id @default(cuid())
+  url String
+  filename String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  postId String?
+  post Post? @relation(fields: [postId], references: [id])
+
+  artistId String
+  artist Artist @relation(fields: [artistId], references: [id])
 }
