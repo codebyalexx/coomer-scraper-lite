@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 import redisClient from "../../lib/redis.js";
-import { fileMimeByFilename } from "../../lib/utils.js";
+import { fileMimeByFilename, fileTypeByFilename } from "../../lib/utils.js";
 
 const getArtists = async (req, res) => {
   try {
@@ -58,7 +58,7 @@ const getArtistFile = async (req, res) => {
       return res.status(404).json({ error: "File not found on the database" });
     }
 
-    const fileType = fileMimeByFilename(file.filename);
+    const fileType = fileTypeByFilename(file.filename);
     const filePath = path.join(
       "/app/downloads/",
       file.artist.identifier,
