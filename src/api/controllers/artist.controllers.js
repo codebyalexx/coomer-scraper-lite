@@ -1,5 +1,7 @@
 import path from "path";
 import fs from "fs";
+import redisClient from "../../lib/redis.js";
+import { fileMimeByFilename } from "../../lib/utils.js";
 
 const getArtists = async (req, res) => {
   try {
@@ -56,6 +58,7 @@ const getArtistFile = async (req, res) => {
       return res.status(404).json({ error: "File not found on the database" });
     }
 
+    const fileType = fileMimeByFilename(file.filename);
     const filePath = path.join(
       "/app/downloads/",
       file.artist.identifier,
@@ -66,16 +69,68 @@ const getArtistFile = async (req, res) => {
       return res.status(404).json({ error: "File not found on the disk" });
     }
 
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        logger.error(
-          `Failed to send file ${filePath}: ${
-            err.message || "no error message"
-          }`
-        );
-        return res.status(500).json({ error: "Failed to send file" });
+    if (fileType === "image") {
+      res.sendFile(filePath, (err) => {
+        if (err) {
+          logger.error(
+            `Failed to send file ${filePath}: ${
+              err.message || "no error message"
+            }`
+          );
+          return res.status(500).json({ error: "Failed to send file" });
+        }
+      });
+    }
+
+    if (fileType === "video") {
+      const cacheKey = `video:meta:${file.id}`;
+      let meta;
+
+      const cachedMeta = await redisClient.get(cacheKey);
+
+      if (cachedMeta) {
+        meta = JSON.parse(cachedMeta);
+      } else {
+        const stat = fs.statSync(filePath);
+        meta = {
+          filePath: filePath,
+          fileSize: stat.size,
+        };
+        await redisClient.set(cacheKey, JSON.stringify(meta));
       }
-    });
+
+      const range = req.headers.range;
+      if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : meta.fileSize - 1;
+
+        if (start >= meta.fileSize) {
+          return res.status(416).send("Requested range not satisfiable");
+        }
+
+        const chunksize = end - start + 1;
+        const fileStream = fs.createReadStream(meta.filePath, { start, end });
+        const head = {
+          "Content-Range": `bytes ${start}-${end}/${meta.fileSize}`,
+          "Accept-Ranges": "bytes",
+          "Content-Length": chunksize,
+          "Content-Type": fileMimeByFilename(file.filename),
+        };
+        res.writeHead(206, head);
+        return fileStream.pipe(res);
+      } else {
+        const head = {
+          "Content-Length": meta.fileSize,
+          "Content-Type": fileMimeByFilename(file.filename),
+          "Accept-Ranges": "bytes",
+        };
+        res.writeHead(200, head);
+        fs.createReadStream(meta.filePath).pipe(res);
+      }
+    }
+
+    return res.status(500).json({ error: "File type not supported" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
