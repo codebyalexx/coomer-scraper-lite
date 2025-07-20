@@ -2,6 +2,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import path from "path";
+import fs from "fs";
+
+fs.rmSync(path.join(process.cwd(), "combined.log"));
+fs.rmSync(path.join(process.cwd(), "error.log"));
+
 import { getAllArtistPosts, getPostContent } from "./lib/coomer-api.js";
 import { downloadFile } from "./lib/downloader.js";
 import pLimit from "p-limit";
@@ -13,6 +18,13 @@ import logger from "./lib/logger.js";
 import prisma from "./lib/prisma.js";
 
 async function main() {
+  const nodl = process.argv.includes("--nodl");
+
+  if (nodl) {
+    console.log("Download disabled.");
+    return;
+  }
+
   const postSelectionLimitIncrease = 10;
   let postSelectionLimit = 150;
 

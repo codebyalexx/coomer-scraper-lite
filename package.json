@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "node src/app.js"
+    "dev": "node src/app.js",
+    "dev-nodl": "node src/app.js --nodl"
   },
   "keywords": [],
   "author": "",
