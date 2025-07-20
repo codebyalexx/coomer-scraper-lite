@@ -16,6 +16,7 @@ import cliProgress from "cli-progress";
 import colors from "cli-color";
 import logger from "./lib/logger.js";
 import prisma from "./lib/prisma.js";
+import { startApiServer } from "./api/server.js";
 
 async function main() {
   const nodl = process.argv.includes("--nodl");
@@ -183,3 +184,4 @@ async function main() {
 
 discord();
 main();
+startApiServer();
