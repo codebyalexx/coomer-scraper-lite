@@ -83,6 +83,21 @@ async function main() {
               `Found ${attachments.length} attachments for post ${post.id}`
             );
 
+            let postDB = await prisma.post.findUnique({
+              where: {
+                identifier: post.id,
+                artistId: artist.id,
+              },
+            });
+
+            if (!postDB)
+              postDB = await prisma.post.create({
+                data: {
+                  identifier: post.id,
+                  artistId: artist.id,
+                },
+              });
+
             const parsedAttachments = attachments.map((attachment) => {
               return {
                 url: `https://coomer.su/data${attachment.path}`,
@@ -105,6 +120,24 @@ async function main() {
                 try {
                   logger.info(`Downloading attachment ${attachment.filename}`);
                   await downloadFile(attachment);
+
+                  let fileDB = await prisma.file.findUnique({
+                    where: {
+                      filename: attachment.filename,
+                      postId: postDB.id,
+                      artistId: artist.id,
+                    },
+                  });
+
+                  if (!fileDB)
+                    fileDB = await prisma.file.create({
+                      data: {
+                        url: attachment.url,
+                        filename: attachment.filename,
+                        postId: postDB.id,
+                        artistId: artist.id,
+                      },
+                    });
                 } catch (e) {
                   logger.error(
                     `Failed to download attachment ${
