@@ -16,6 +16,10 @@ const seed = async (req, res) => {
     if (postSelectionLimitKey)
       postSelectionLimit = parseInt(postSelectionLimitKey);
 
+    res
+      .status(200)
+      .json({ message: `Seeding started for ${uniqueArtists.length} artists` });
+
     for (const artist of uniqueArtists) {
       try {
         const posts = await getAllArtistPosts(artist.url);
@@ -126,7 +130,6 @@ const seed = async (req, res) => {
         );
       }
     }
-    res.status(200).json({ message: "Seed successful" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
