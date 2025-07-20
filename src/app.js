@@ -83,7 +83,7 @@ async function main() {
               `Found ${attachments.length} attachments for post ${post.id}`
             );
 
-            let postDB = await prisma.post.findUnique({
+            let postDB = await prisma.post.findFirst({
               where: {
                 identifier: post.id,
                 artistId: artist.id,
@@ -121,7 +121,7 @@ async function main() {
                   logger.info(`Downloading attachment ${attachment.filename}`);
                   await downloadFile(attachment);
 
-                  let fileDB = await prisma.file.findUnique({
+                  let fileDB = await prisma.file.findFirst({
                     where: {
                       filename: attachment.filename,
                       postId: postDB.id,
