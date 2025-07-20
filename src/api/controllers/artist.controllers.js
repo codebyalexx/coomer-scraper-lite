@@ -24,9 +24,9 @@ const getArtists = async (req, res) => {
 };
 
 const getArtist = async (req, res) => {
-  const fileOffset = parseInt(req.query.fileOffset, 10) || 24;
+  const fileOffset = parseInt(req.query.fileOffset, 10) || 0;
   const fileLimit = parseInt(req.query.fileLimit, 10) || 24;
-  const postOffset = parseInt(req.query.postOffset, 10) || 12;
+  const postOffset = parseInt(req.query.postOffset, 10) || 0;
   const postLimit = parseInt(req.query.postLimit, 10) || 12;
 
   try {
