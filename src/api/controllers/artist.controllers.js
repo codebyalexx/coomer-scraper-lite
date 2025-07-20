@@ -24,14 +24,25 @@ const getArtists = async (req, res) => {
 };
 
 const getArtist = async (req, res) => {
+  const fileOffset = req.query.fileOffset || 24;
+  const fileLimit = req.query.fileLimit || 24;
+  const postOffset = req.query.postOffset || 12;
+  const postLimit = req.query.postLimit || 12;
+
   try {
     const artist = await prisma.artist.findUnique({
       where: {
         id: req.params.id,
       },
       include: {
-        posts: true,
-        files: true,
+        posts: {
+          skip: postOffset,
+          take: postLimit,
+        },
+        files: {
+          skip: fileOffset,
+          take: fileLimit,
+        },
       },
     });
     if (!artist) {
