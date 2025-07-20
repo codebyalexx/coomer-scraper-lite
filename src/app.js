@@ -1,13 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import fs from "fs";
 import path from "path";
-import {
-  getAllArtistPosts,
-  getArtistProfile,
-  getPostContent,
-} from "./lib/coomer-api.js";
+import { getAllArtistPosts, getPostContent } from "./lib/coomer-api.js";
 import { downloadFile } from "./lib/downloader.js";
 import pLimit from "p-limit";
 import redisClient from "./lib/redis.js";
@@ -15,22 +10,13 @@ import { discord } from "./lib/discord.js";
 import cliProgress from "cli-progress";
 import colors from "cli-color";
 import logger from "./lib/logger.js";
-
-const artists = JSON.parse(
-  fs.readFileSync(path.join(process.cwd(), "data/artists.json"), "utf-8")
-);
-const uniqueArtists = [...new Set(artists)];
-
-const artistsExceptions = JSON.parse(
-  fs.readFileSync(
-    path.join(process.cwd(), "data/artists-exceptions.json"),
-    "utf-8"
-  )
-);
+import prisma from "./lib/prisma.js";
 
 async function main() {
   const postSelectionLimitIncrease = 10;
   let postSelectionLimit = 150;
+
+  const uniqueArtists = await prisma.artist.findMany();
 
   const postSelectionLimitKey = await redisClient.get("post-selection-limit");
   if (postSelectionLimitKey)
@@ -50,14 +36,12 @@ async function main() {
 
   for (const artist of uniqueArtists) {
     try {
-      const profile = await getArtistProfile(artist);
-
       const artistBar = multibar.create(1, 0, {
-        artistName: colors.yellow(profile.name),
+        artistName: colors.yellow(artist.name),
         progressLabel: "posts",
       });
 
-      const posts = await getAllArtistPosts(artist);
+      const posts = await getAllArtistPosts(artist.url);
 
       let selectedPosts =
         posts.length > postSelectionLimit
@@ -66,7 +50,7 @@ async function main() {
 
       artistBar.setTotal(selectedPosts.length);
 
-      if (artistsExceptions.includes(artist)) {
+      if (artist.isException) {
         selectedPosts = posts;
       }
 
@@ -75,7 +59,7 @@ async function main() {
       const postTasks = selectedPosts.map((post) =>
         postLimit(async () => {
           try {
-            const postContent = await getPostContent(artist, post.id);
+            const postContent = await getPostContent(artist.url, post.id);
 
             let attachments = [];
             if (postContent?.post?.attachments)
@@ -92,11 +76,11 @@ async function main() {
                 url: `https://coomer.su/data${attachment.path}`,
                 path: "/data" + attachment.path,
                 filename: attachment.name,
-                outputPath: path.join("/app/downloads/", profile.id),
+                outputPath: path.join("/app/downloads/", artist.identifier),
                 outputFilename: attachment.name,
                 outputFilePath: path.join(
                   "/app/downloads/",
-                  profile.id,
+                  artist.identifier,
                   attachment.name
                 ),
               };
@@ -137,7 +121,7 @@ async function main() {
       multibar.remove(artistBar);
     } catch (e) {
       logger.error(
-        `Failed to process artist ${artist}, error: ${
+        `Failed to process artist ${artist.name}, error: ${
           e.message || "no error message"
         }`
       );

@@ -18,6 +18,9 @@ model Artist {
   id    String @id @default(cuid())
   url   String @unique
   name String
+  identifier String
+  service String
+  isException Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

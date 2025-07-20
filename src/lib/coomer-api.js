@@ -33,6 +33,7 @@ export async function getArtistProfile(artistUrl) {
     name: data.name,
     id: data.id,
     service: data.service,
+    _data: data,
   };
 }
 
