@@ -56,7 +56,7 @@ export async function discord() {
               name: artistDetails.name,
               identifier: artistDetails.id,
               service: artistDetails.service,
-              isException: priority,
+              isException: false,
             },
           });
           added++;
