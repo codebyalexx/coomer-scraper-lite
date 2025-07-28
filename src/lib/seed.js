@@ -75,7 +75,7 @@ class Seed {
 
                 const parsedAttachments = attachments.map((attachment) => {
                   return {
-                    url: `https://coomer.su/data${attachment.path}`,
+                    url: `https://coomer.st/data${attachment.path}`,
                     path: "/data" + attachment.path,
                     filename: attachment.name,
                     outputPath: path.join("/app/downloads/", artist.identifier),
