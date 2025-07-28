@@ -73,7 +73,7 @@ async function main() {
         selectedPosts = posts;
       }
 
-      const postLimit = pLimit(4);
+      const postLimit = pLimit(3);
 
       const postTasks = selectedPosts.map((post) =>
         postLimit(async () => {
