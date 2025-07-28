@@ -36,7 +36,7 @@ export async function downloadFile(attachment, redirectCount = 0) {
       }
 
       /** Fails handler */
-      if (!response.ok) {
+      if (response.statusCode !== 200 && response.statusCode !== 304) {
         return reject(
           new Error(
             `Failed to get '${url} /// ${filename}' (${response.statusCode})`
