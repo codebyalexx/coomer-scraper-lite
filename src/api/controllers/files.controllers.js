@@ -115,6 +115,50 @@ export const getFileStream = async (req, res) => {
   }
 };
 
+export const getVideoThumbnail = async (req, res) => {
+  try {
+    const file = await prisma.file.findUnique({
+      where: {
+        id: req.params.id,
+      },
+    });
+    if (!file) {
+      return res.status(404).json({ error: "File not found" });
+    }
+
+    const fileType = fileTypeByFilename(file.filename);
+    if (fileType !== "video") {
+      return res.status(400).json({ error: "File is not a video" });
+    }
+
+    const thumbnailPath = path.join(
+      "/app/downloads/",
+      file.artist.identifier,
+      `${file.filename}.thumbnail.jpg`
+    );
+    const videoPath = path.join(
+      "/app/downloads/",
+      file.artist.identifier,
+      file.filename
+    );
+
+    if (fs.existsSync(thumbnailPath)) {
+      return res.sendFile(thumbnailPath);
+    }
+
+    const ffmpegCmd = `ffmpeg -ss 00:00:01 -i "${videoPath}" -frames:v 1 -q:v 2 "${thumbnailPath}"`;
+    exec(ffmpegCmd, (error) => {
+      if (error) {
+        logger.error(`Failed to generate thumbnail: ${error.message}`);
+        return res.status(500).json({ error: "Failed to generate thumbnail" });
+      }
+      return res.sendFile(thumbnailPath);
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const setFileMetadata = async (req, res) => {
   try {
     const file = await prisma.file.findUnique({
