@@ -48,4 +48,18 @@ model File {
 
   artistId String
   artist Artist @relation(fields: [artistId], references: [id])
+
+  metadata FileMetadata?
+}
+
+model FileMetadata {
+  id String @id @default(cuid())
+
+  type String
+  width Int?
+  height Int?
+  duration Int?
+
+  fileId String @unique
+  file File @relation(fields: [fileId], references: [id])
 }
