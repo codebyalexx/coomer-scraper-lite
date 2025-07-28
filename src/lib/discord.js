@@ -22,7 +22,7 @@ export async function discord() {
 
     const content = message.content;
 
-    const regex = /https?:\/\/(?:www\.)?coomer\.su(?:\/\S*)?/gi;
+    const regex = /https?:\/\/(?:www\.)?coomer\.st(?:\/\S*)?/gi;
     const matches = content.match(regex);
 
     if (matches) {
