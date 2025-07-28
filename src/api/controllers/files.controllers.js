@@ -121,6 +121,9 @@ export const getVideoThumbnail = async (req, res) => {
       where: {
         id: req.params.id,
       },
+      include: {
+        artist: true,
+      },
     });
     if (!file) {
       return res.status(404).json({ error: "File not found" });
