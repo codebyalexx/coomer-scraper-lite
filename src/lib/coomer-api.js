@@ -1,6 +1,6 @@
 import redis from "./redis.js";
 
-const apiBaseURL = "https://coomer.su/api";
+const apiBaseURL = "https://coomer.st/api";
 
 export function getArtistDetailsFromURL(artistUrl) {
   return {
