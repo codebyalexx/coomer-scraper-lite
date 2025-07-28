@@ -5,6 +5,7 @@ import { fileTypeByFilename } from "../../lib/utils.js";
 import redisClient from "../../lib/redis.js";
 import logger from "../../lib/logger.js";
 import { exec } from "child_process";
+import { fileMimeByFilename } from "../../lib/utils.js";
 
 export const getFileData = async (req, res) => {
   try {
