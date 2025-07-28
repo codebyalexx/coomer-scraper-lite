@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma.js";
+import prisma from "../../lib/prisma.js";
 import path from "path";
 import fs from "fs";
 import { fileTypeByFilename } from "../../lib/utils.js";

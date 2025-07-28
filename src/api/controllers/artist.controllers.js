@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma.js";
+import prisma from "../../lib/prisma.js";
 
 const getArtists = async (req, res) => {
   const offset = parseInt(req.query.offset, 10) || 0;
