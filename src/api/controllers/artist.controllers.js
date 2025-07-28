@@ -4,12 +4,16 @@ import redisClient from "../../lib/redis.js";
 import { fileMimeByFilename, fileTypeByFilename } from "../../lib/utils.js";
 
 const getArtists = async (req, res) => {
+  const offset = parseInt(req.query.offset, 10) || 0;
+  const limit = parseInt(req.query.limit, 10) || 16;
   try {
     const artists = await prisma.artist.findMany({
       include: {
         posts: true,
         files: true,
       },
+      skip: offset,
+      take: limit,
     });
     res.status(200).json(
       artists.map((artist) => ({
