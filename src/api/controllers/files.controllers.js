@@ -2,7 +2,7 @@ import prisma from "../../lib/prisma.js";
 import path from "path";
 import fs from "fs";
 import { fileTypeByFilename } from "../../lib/utils.js";
-import { redisClient } from "../../lib/redis.js";
+import redisClient from "../../lib/redis.js";
 import logger from "../../lib/logger.js";
 
 export const getFileData = async (req, res) => {
