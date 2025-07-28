@@ -31,7 +31,6 @@ export const getFileStream = async (req, res) => {
   try {
     const file = await prisma.file.findUnique({
       where: {
-        artistId: req.params.id,
         id: req.params.fileId,
       },
       include: {
