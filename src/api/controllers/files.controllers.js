@@ -4,6 +4,7 @@ import fs from "fs";
 import { fileTypeByFilename } from "../../lib/utils.js";
 import redisClient from "../../lib/redis.js";
 import logger from "../../lib/logger.js";
+import { exec } from "child_process";
 
 export const getFileData = async (req, res) => {
   try {
