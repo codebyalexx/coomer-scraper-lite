@@ -41,6 +41,9 @@ const getArtist = async (req, res) => {
           take: postLimit,
         },
         files: {
+          include: {
+            metadata: true,
+          },
           skip: fileOffset,
           take: fileLimit,
         },
