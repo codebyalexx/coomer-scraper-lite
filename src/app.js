@@ -19,8 +19,8 @@ import prisma from "./lib/prisma.js";
 import { startApiServer } from "./api/server.js";
 
 async function main() {
-  logger.error("Stopping scraper due to maintenance");
-  return;
+  //logger.error("Stopping scraper due to maintenance");
+  //return;
 
   const nodl = process.argv.includes("--nodl");
 
@@ -186,8 +186,8 @@ async function main() {
   }
 
   // Loop increasing post selection limit
-  postSelectionLimit += postSelectionLimitIncrease;
-  await redisClient.set("post-selection-limit", postSelectionLimit);
+  // postSelectionLimit += postSelectionLimitIncrease;
+  //await redisClient.set("post-selection-limit", postSelectionLimit);
   main();
 }
 
