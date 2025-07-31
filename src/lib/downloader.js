@@ -10,7 +10,7 @@ export async function downloadFile(attachment, redirectCount = 0) {
   return new Promise(async (resolve, reject) => {
     if (fs.existsSync(outputFilePath)) return resolve();
 
-    const skipKey = await redisClient.get(`skip-download:${outputFilePath}`);
+    const skipKey = await redisClient.get(`skip-download-2:${outputFilePath}`);
     if (skipKey) return reject(new Error("File skipped"));
 
     if (redirectCount > 1) {
@@ -46,8 +46,8 @@ export async function downloadFile(attachment, redirectCount = 0) {
 
       /** Timeout */
       const timeout = setTimeout(async () => {
-        await redisClient.set(`skip-download:${outputFilePath}`, "true", {
-          expiration: 60 * 60 * 24,
+        await redisClient.set(`skip-download-2:${outputFilePath}`, "true", {
+          expiration: 60 * 60 * 1,
         });
         fs.unlinkSync(outputFilePath);
         return reject(new Error("Time exceeded, trying later."));
