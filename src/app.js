@@ -19,6 +19,9 @@ import prisma from "./lib/prisma.js";
 import { startApiServer } from "./api/server.js";
 
 async function main() {
+  logger.error("Stopping scraper due to maintenance");
+  return;
+
   const nodl = process.argv.includes("--nodl");
 
   if (nodl) {
