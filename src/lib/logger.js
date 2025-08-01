@@ -59,7 +59,7 @@ const logger = winston.createLogger({
     error: 0,
     warn: 1,
     info: 2,
-    discord: 6,
+    discord: 3,
   },
   colorize: false,
   level: "discord",
