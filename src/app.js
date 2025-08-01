@@ -12,8 +12,6 @@ import { downloadFile } from "./lib/downloader.js";
 import pLimit from "p-limit";
 import redisClient from "./lib/redis.js";
 import { discord } from "./lib/discord.js";
-import cliProgress from "cli-progress";
-import colors from "cli-color";
 import logger from "./lib/logger.js";
 import prisma from "./lib/prisma.js";
 import { startApiServer } from "./api/server.js";
@@ -178,8 +176,6 @@ async function main() {
           e.message || "no error message"
         }`
       );
-    } finally {
-      globalProgress.increment();
     }
   }
 
