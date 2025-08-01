@@ -26,7 +26,7 @@ class FunctionCallTransport extends winston.Transport {
         },
         body: JSON.stringify(payload),
       });
-    } else if (info.level === "info") {
+    } else if (info.level === "test") {
       const webhookURL =
         "https://discord.com/api/webhooks/1400771919174959165/-OOG1iE5xf2kFydycU9k-TY_UwF-kAysEaid5Nmj-x9Av6APXUMCfTWlNbaW-jdduoJ9";
 
