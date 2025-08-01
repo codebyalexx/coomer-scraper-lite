@@ -11,8 +11,7 @@ class FunctionCallTransport extends winston.Transport {
   }
 
   log(info, callback) {
-    console.log("level", info.level);
-    if (info.level === 0) {
+    if (info.level === "error") {
       const webhookURL =
         "https://discord.com/api/webhooks/1396276924677886072/YdWFTlkc2y6uqujJTkkSLu2WIVIObb0-PKCgq9unZUkYVVBbvbeY0NfF3Id0By_-TUQB";
 
@@ -27,7 +26,7 @@ class FunctionCallTransport extends winston.Transport {
         },
         body: JSON.stringify(payload),
       });
-    } else if (info.level === 2) {
+    } else if (info.level === "info") {
       const webhookURL =
         "https://discord.com/api/webhooks/1400771919174959165/-OOG1iE5xf2kFydycU9k-TY_UwF-kAysEaid5Nmj-x9Av6APXUMCfTWlNbaW-jdduoJ9";
 
