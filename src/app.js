@@ -26,7 +26,10 @@ async function main() {
 
   if (nodl) {
     console.log("Download disabled.");
-    logger.discord("Download disabled, not starting scraper.");
+    logger.log({
+      level: "discord",
+      message: "Download disabled, not starting scraper.",
+    });
     return;
   }
 
@@ -44,7 +47,10 @@ async function main() {
   if (postSelectionLimitKey)
     postSelectionLimit = parseInt(postSelectionLimitKey);
 
-  logger.discord(`Starting scraper loop with ${uniqueArtists.length} artists.`);
+  logger.log({
+    level: "discord",
+    message: `Starting scraper loop with ${uniqueArtists.length} artists.`,
+  });
 
   const multibar = new cliProgress.MultiBar({
     clearOnComplete: false,
@@ -78,11 +84,12 @@ async function main() {
         selectedPosts = posts;
       }
 
-      logger.discord(
-        `Processing ${selectedPosts.length} posts for artist ${
+      logger.log({
+        level: "discord",
+        message: `Processing ${selectedPosts.length} posts for artist ${
           artist.name
-        } (${globalProgress.getProgress()}/${globalProgress.getTotal()}).`
-      );
+        } (${globalProgress.getProgress()}/${globalProgress.getTotal()}).`,
+      });
 
       const postLimit = pLimit(3);
 
@@ -187,11 +194,14 @@ async function main() {
 
       await Promise.all(postTasks);
 
-      logger.discord(
-        `Finished processing ${selectedPosts.length} posts for artist ${
+      logger.log({
+        level: "discord",
+        message: `Finished processing ${
+          selectedPosts.length
+        } posts for artist ${
           artist.name
-        } (${globalProgress.getProgress()}/${globalProgress.getTotal()}). Processed x files!`
-      );
+        } (${globalProgress.getProgress()}/${globalProgress.getTotal()}). Processed x files!`,
+      });
 
       multibar.remove(artistBar);
     } catch (e) {
