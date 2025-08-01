@@ -157,8 +157,6 @@ async function main() {
                 e.message || "no error message"
               }`
             );
-          } finally {
-            artistBar.increment();
           }
         })
       );
