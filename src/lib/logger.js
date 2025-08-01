@@ -63,7 +63,7 @@ const logger = winston.createLogger({
   },
   colorize: false,
   level: "discord",
-  format: winston.format.json(),
+  format: winston.format.combine(winston.format.json()),
   defaultMeta: { service: "downloader-script" },
   transports: [
     new FunctionCallTransport({
@@ -75,10 +75,7 @@ const logger = winston.createLogger({
     new winston.transports.File({ filename: "combined.log" }),
     new winston.transports.Console({
       level: 0,
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
+      format: winston.format.combine(winston.format.simple()),
     }),
   ],
 });
