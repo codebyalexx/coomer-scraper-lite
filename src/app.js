@@ -26,10 +26,7 @@ async function main() {
 
   if (nodl) {
     console.log("Download disabled.");
-    logger.log({
-      level: "discord",
-      message: "Download disabled, not starting scraper.",
-    });
+    logger.info("Download disabled, not starting scraper.");
     return;
   }
 
@@ -47,30 +44,11 @@ async function main() {
   if (postSelectionLimitKey)
     postSelectionLimit = parseInt(postSelectionLimitKey);
 
-  logger.log({
-    level: "discord",
-    message: `Starting scraper loop with ${uniqueArtists.length} artists.`,
-  });
+  logger.info(`Starting scraper loop with ${uniqueArtists.length} artists.`);
 
-  const multibar = new cliProgress.MultiBar({
-    clearOnComplete: false,
-    hideCursor: true,
-    format: "{bar} | {artistName} | {value}/{total} {progressLabel}",
-    fps: 30,
-  });
-
-  const globalProgress = multibar.create(uniqueArtists.length, 0, {
-    artistName: colors.green("GLOBAL PROGRESS"),
-    progressLabel: "artists",
-  });
-
+  let artistsProcessed = 0;
   for (const artist of uniqueArtists) {
     try {
-      const artistBar = multibar.create(1, 0, {
-        artistName: colors.yellow(artist.name),
-        progressLabel: "posts",
-      });
-
       const posts = await getAllArtistPosts(artist.url);
 
       let selectedPosts =
@@ -78,18 +56,13 @@ async function main() {
           ? posts.slice(0, postSelectionLimit)
           : posts;
 
-      artistBar.setTotal(selectedPosts.length);
-
       if (artist.isException) {
         selectedPosts = posts;
       }
 
-      logger.log({
-        level: "discord",
-        message: `Processing ${selectedPosts.length} posts for artist ${
-          artist.name
-        } (${globalProgress.getProgress()}/${globalProgress.getTotal()}).`,
-      });
+      logger.info(
+        `Processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}).`
+      );
 
       const postLimit = pLimit(3);
 
@@ -106,9 +79,9 @@ async function main() {
             if (postContent?.videos)
               attachments = [...attachments, ...postContent.videos];
 
-            logger.info(
-              `Found ${attachments.length} attachments for post ${post.id}`
-            );
+            //logger.info(
+            //  `Found ${attachments.length} attachments for post ${post.id}`
+            //);
 
             let postDB = await prisma.post.findFirst({
               where: {
@@ -145,7 +118,7 @@ async function main() {
             const attachmentTasks = parsedAttachments.map((attachment) =>
               attachmentLimit(async () => {
                 try {
-                  logger.info(`Downloading attachment ${attachment.filename}`);
+                  //logger.info(`Downloading attachment ${attachment.filename}`);
                   await downloadFile(attachment);
 
                   let fileDB = await prisma.file.findFirst({
@@ -194,16 +167,11 @@ async function main() {
 
       await Promise.all(postTasks);
 
-      logger.log({
-        level: "discord",
-        message: `Finished processing ${
-          selectedPosts.length
-        } posts for artist ${
-          artist.name
-        } (${globalProgress.getProgress()}/${globalProgress.getTotal()}). Processed x files!`,
-      });
+      logger.info(
+        `Finished processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}). Processed ${totalFilesCount} files!`
+      );
 
-      multibar.remove(artistBar);
+      artistsProcessed++;
     } catch (e) {
       logger.error(
         `Failed to process artist ${artist.name}, error: ${

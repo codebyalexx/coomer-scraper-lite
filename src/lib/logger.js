@@ -27,7 +27,7 @@ class FunctionCallTransport extends winston.Transport {
         },
         body: JSON.stringify(payload),
       });
-    } else if (info.level === 3) {
+    } else if (info.level === 2) {
       const webhookURL =
         "https://discord.com/api/webhooks/1400771919174959165/-OOG1iE5xf2kFydycU9k-TY_UwF-kAysEaid5Nmj-x9Av6APXUMCfTWlNbaW-jdduoJ9";
 
@@ -60,10 +60,9 @@ const logger = winston.createLogger({
     error: 0,
     warn: 1,
     info: 2,
-    discord: 3,
   },
   colorize: false,
-  level: 6,
+  level: "info",
   format: winston.format.combine(winston.format.json()),
   defaultMeta: { service: "downloader-script" },
   transports: [
@@ -75,7 +74,7 @@ const logger = winston.createLogger({
     new winston.transports.File({ filename: "error.log", level: 0 }),
     new winston.transports.File({ filename: "combined.log" }),
     new winston.transports.Console({
-      level: 0,
+      level: "info",
       format: winston.format.combine(winston.format.simple()),
     }),
   ],
