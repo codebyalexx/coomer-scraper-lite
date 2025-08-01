@@ -46,12 +46,13 @@ export async function downloadFile(attachment, redirectCount = 0) {
 
       /** Timeout */
       const timeout = setTimeout(async () => {
+        if (!redisClient || !outputFilePath) return;
         await redisClient.set(`skip-download-2:${outputFilePath}`, "true", {
           expiration: 60 * 60 * 1,
         });
         fs.unlinkSync(outputFilePath);
         return reject(new Error("Time exceeded, trying later."));
-      }, 1000 * 120);
+      }, 1000 * 60 * 4);
 
       /** Download process */
       fs.mkdirSync(outputPath, { recursive: true });
@@ -60,18 +61,18 @@ export async function downloadFile(attachment, redirectCount = 0) {
       response.pipe(fileStream);
 
       fileStream.on("finish", () => {
+        clearTimeout(timeout);
         setTimeout(() => {
           fileStream.close(() => resolve());
         }, 300);
-        clearTimeout(timeout);
       });
       request.on("error", (err) => {
-        fs.unlink(outputFilePath, () => reject(err));
         clearTimeout(timeout);
+        fs.unlink(outputFilePath, () => reject(err));
       });
       fileStream.on("error", (err) => {
-        fs.unlink(outputFilePath, () => reject(err));
         clearTimeout(timeout);
+        fs.unlink(outputFilePath, () => reject(err));
       });
     });
   });
