@@ -65,6 +65,7 @@ const logger = winston.createLogger({
     silly: 6,
     discord: 7,
   },
+  level: "discord",
   format: winston.format.json(),
   defaultMeta: { service: "downloader-script" },
   transports: [
