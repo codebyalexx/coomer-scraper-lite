@@ -26,10 +26,10 @@ async function main() {
 
   if (nodl) {
     console.log("Download disabled.");
+    logger.discord("Download disabled, not starting scraper.");
     return;
   }
 
-  const postSelectionLimitIncrease = 10;
   let postSelectionLimit = 150;
 
   const uniqueArtists = await prisma.artist.findMany({
@@ -43,6 +43,8 @@ async function main() {
   const postSelectionLimitKey = await redisClient.get("post-selection-limit");
   if (postSelectionLimitKey)
     postSelectionLimit = parseInt(postSelectionLimitKey);
+
+  logger.discord(`Starting scraper loop with ${uniqueArtists.length} artists.`);
 
   const multibar = new cliProgress.MultiBar({
     clearOnComplete: false,
@@ -76,7 +78,15 @@ async function main() {
         selectedPosts = posts;
       }
 
+      logger.discord(
+        `Processing ${selectedPosts.length} posts for artist ${
+          artist.name
+        } (${globalProgress.getProgress()}/${globalProgress.getTotal()}).`
+      );
+
       const postLimit = pLimit(3);
+
+      let totalFilesCount = 0;
 
       const postTasks = selectedPosts.map((post) =>
         postLimit(async () => {
@@ -139,6 +149,10 @@ async function main() {
                     },
                   });
 
+                  if (!fileDB) {
+                    totalFilesCount++;
+                  }
+
                   if (!fileDB)
                     fileDB = await prisma.file.create({
                       data: {
@@ -172,6 +186,12 @@ async function main() {
       );
 
       await Promise.all(postTasks);
+
+      logger.discord(
+        `Finished processing ${selectedPosts.length} posts for artist ${
+          artist.name
+        } (${globalProgress.getProgress()}/${globalProgress.getTotal()}). Processed x files!`
+      );
 
       multibar.remove(artistBar);
     } catch (e) {
