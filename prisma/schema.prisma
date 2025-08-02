@@ -42,6 +42,7 @@ model File {
   filename String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  validated Boolean @default(false)
 
   postId String?
   post Post? @relation(fields: [postId], references: [id])
