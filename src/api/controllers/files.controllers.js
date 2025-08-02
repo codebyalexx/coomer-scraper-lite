@@ -7,6 +7,23 @@ import logger from "../../lib/logger.js";
 import { exec } from "child_process";
 import { fileMimeByFilename } from "../../lib/utils.js";
 
+export const getFiles = async (req, res) => {
+  try {
+    const files = await prisma.file.findMany({
+      include: {
+        artist: true,
+        metadata: true,
+        post: true,
+      },
+      skip: parseInt(req.query.offset, 10) || 0,
+      take: parseInt(req.query.limit, 10) || 24,
+    });
+    res.status(200).json(files);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const getFileData = async (req, res) => {
   try {
     const file = await prisma.file.findUnique({
