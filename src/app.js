@@ -3,6 +3,7 @@ dotenv.config();
 
 import path from "path";
 import fs from "fs";
+import { validation } from "./lib/validation.js";
 
 fs.rmSync(path.join(process.cwd(), "combined.log"));
 fs.rmSync(path.join(process.cwd(), "error.log"));
@@ -186,3 +187,4 @@ async function main() {
 discord();
 main();
 startApiServer();
+validation.run();

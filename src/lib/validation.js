@@ -1,4 +1,3 @@
-import logger from "./logger.js";
 import { fileTypeByFilename } from "./utils.js";
 import prisma from "./prisma.js";
 import sharp from "sharp";
@@ -19,7 +18,7 @@ class Validation {
   }
 
   async goLoop() {
-    logger.info(`Validation loop ${this.loop}`);
+    console.log(`Validation loop ${this.loop}`);
 
     const files = await prisma.file.findMany({
       where: {
@@ -31,7 +30,7 @@ class Validation {
 
     if (files.length === 0) {
       this.started = false;
-      logger.info("Validation finished");
+      console.log("Validation finished");
       return;
     }
 

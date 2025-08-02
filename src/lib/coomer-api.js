@@ -61,7 +61,7 @@ export async function getAllArtistPosts(artistUrl) {
 export async function getArtistPosts(artistUrl, offset = 0) {
   const { service, id } = getArtistDetailsFromURL(artistUrl);
 
-  const cached = await redis.get(`posts:${artistUrl}:${offset}`);
+  const cached = await redis.get(`posts-v2:${artistUrl}:${offset}`);
   if (cached) return JSON.parse(cached);
 
   const response = await fetch(
@@ -75,7 +75,9 @@ export async function getArtistPosts(artistUrl, offset = 0) {
 
   const data = await response.json();
 
-  await redis.set(`posts:${artistUrl}:${offset}`, JSON.stringify(data));
+  await redis.set(`posts-v2:${artistUrl}:${offset}`, JSON.stringify(data), {
+    EX: 60 * 60 * 12,
+  });
   await new Promise((resolve) => setTimeout(resolve, 400));
 
   return data.map((el) => ({
