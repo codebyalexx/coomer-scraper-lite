@@ -70,6 +70,7 @@ export async function downloadFile(
             headers: {
               "Content-Type": "application/octet-stream",
               "x-filename": filename,
+              "x-artist": attachment.artistIdentifier,
             },
             maxContentLength: Infinity,
             maxBodyLength: Infinity,

@@ -109,6 +109,7 @@ async function main() {
                   artist.identifier,
                   attachment.name
                 ),
+                artistIdentifier: artist.identifier,
               };
             });
 
