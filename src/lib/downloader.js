@@ -2,7 +2,7 @@ import fs from "fs";
 import https from "https";
 import { URL } from "url";
 import redisClient from "./redis.js";
-import logger from "./logger.js";
+import axios from "axios";
 
 export async function downloadFile(
   attachment,
