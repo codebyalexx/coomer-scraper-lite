@@ -3,7 +3,7 @@ dotenv.config();
 
 import path from "path";
 import fs from "fs";
-import { pipeline } from "stream/promises";
+import { pipeline } from "stream";
 import express from "express";
 import prisma from "./lib/prisma.js";
 
