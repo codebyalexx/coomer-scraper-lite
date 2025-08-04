@@ -21,7 +21,8 @@ async function main() {
   //logger.error("Stopping scraper due to maintenance");
   //return;
 
-  const nodl = process.argv.includes("--nodl");
+  let nodl = process.argv.includes("--nodl");
+  nodl = true;
 
   if (nodl) {
     console.log("Download disabled.");
