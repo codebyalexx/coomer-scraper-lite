@@ -43,7 +43,9 @@ model File {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   validated Boolean @default(false)
-  server String @default("local")
+
+  storageId String?
+  storage Storage? @relation(fields: [storageId], references: [id])
 
   postId String?
   post Post? @relation(fields: [postId], references: [id])
@@ -64,4 +66,12 @@ model FileMetadata {
 
   fileId String @unique
   file File @relation(fields: [fileId], references: [id])
+}
+
+model Storage {
+  id String @id @default(cuid())
+  name String
+  host String
+  port Int
+  files File[]
 }
