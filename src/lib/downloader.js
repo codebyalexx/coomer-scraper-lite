@@ -4,7 +4,11 @@ import { URL } from "url";
 import redisClient from "./redis.js";
 import logger from "./logger.js";
 
-export async function downloadFile(attachment, redirectCount = 0) {
+export async function downloadFile(
+  attachment,
+  redirectCount = 0,
+  storage = null
+) {
   const { url, path, filename, outputPath, outputFilename, outputFilePath } =
     attachment;
   return new Promise(async (resolve, reject) => {
@@ -29,7 +33,8 @@ export async function downloadFile(attachment, redirectCount = 0) {
         response.destroy();
         return downloadFile(
           { ...attachment, url: redirectUrl },
-          redirectCount + 1
+          redirectCount + 1,
+          storage
         )
           .then(resolve)
           .catch(reject);
@@ -50,30 +55,61 @@ export async function downloadFile(attachment, redirectCount = 0) {
         await redisClient.set(`skip-download-2:${outputFilePath}`, "true", {
           expiration: 60 * 60 * 1,
         });
-        fs.unlinkSync(outputFilePath);
+        if (!storage && fs.existsSync(outputFilePath)) {
+          fs.unlinkSync(outputFilePath);
+        }
         return reject(new Error("Time exceeded, trying later."));
       }, 1000 * 60 * 4);
 
-      /** Download process */
-      fs.mkdirSync(outputPath, { recursive: true });
-      const fileStream = fs.createWriteStream(outputFilePath);
+      if (storage) {
+        const { host, port } = storage;
+        const target = `http://${host}:${port}/api/upload`;
 
-      response.pipe(fileStream);
+        axios
+          .post(target, response, {
+            headers: {
+              "Content-Type": "application/octet-stream",
+              "x-filename": filename,
+            },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+          })
+          .then((res) => {
+            clearTimeout(timeout);
+            if (res.data.success) return resolve();
+            reject(new Error("Remote upload failed"));
+          })
+          .catch((err) => {
+            clearTimeout(timeout);
+            reject(err);
+          });
 
-      fileStream.on("finish", () => {
-        clearTimeout(timeout);
-        setTimeout(() => {
-          fileStream.close(() => resolve());
-        }, 300);
-      });
-      request.on("error", (err) => {
-        clearTimeout(timeout);
-        fs.unlink(outputFilePath, () => reject(err));
-      });
-      fileStream.on("error", (err) => {
-        clearTimeout(timeout);
-        fs.unlink(outputFilePath, () => reject(err));
-      });
+        request.on("error", (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
+      } else {
+        /** Download process */
+        fs.mkdirSync(outputPath, { recursive: true });
+        const fileStream = fs.createWriteStream(outputFilePath);
+
+        response.pipe(fileStream);
+
+        fileStream.on("finish", () => {
+          clearTimeout(timeout);
+          setTimeout(() => {
+            fileStream.close(() => resolve());
+          }, 300);
+        });
+        request.on("error", (err) => {
+          clearTimeout(timeout);
+          fs.unlink(outputFilePath, () => reject(err));
+        });
+        fileStream.on("error", (err) => {
+          clearTimeout(timeout);
+          fs.unlink(outputFilePath, () => reject(err));
+        });
+      }
     });
   });
 }

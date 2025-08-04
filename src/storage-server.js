@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 import { pipeline } from "stream/promises";
 import express from "express";
+import prisma from "./lib/prisma.js";
 
 const app = express();
 const uploadDir = path.join(process.cwd(), "downloads");
@@ -23,6 +24,7 @@ app.post("/api/upload", (req, res) => {
       .json({ success: false, error: "Missing filename or artist header" });
   }
 
+  fs.mkdirSync(path.join(uploadDir, artist), { recursive: true });
   const destPath = path.join(uploadDir, artist, filename);
 
   const writeStream = fs.createWriteStream(destPath);
@@ -37,6 +39,34 @@ app.post("/api/upload", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.get("/handshake", (req, res) => {
+  res.json({ success: true });
+});
+
+app.listen(PORT, async () => {
   console.log(`Storage server running on port ${PORT}`);
+
+  let storage = await prisma.storage.findFirst({
+    where: {
+      name: process.env.STORAGE_V_NAME,
+      host: process.env.STORAGE_V_HOST,
+      port: parseInt(process.env.STORAGE_V_PORT),
+    },
+  });
+
+  if (!storage) {
+    storage = await prisma.storage.create({
+      data: {
+        name: process.env.STORAGE_V_NAME,
+        host: process.env.STORAGE_V_HOST,
+        port: parseInt(process.env.STORAGE_V_PORT),
+      },
+    });
+
+    console.log("Storage server created");
+  } else {
+    console.log("Storage server found, isOK");
+  }
+
+  console.log("Storage server ready");
 });

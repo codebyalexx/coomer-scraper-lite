@@ -117,8 +117,22 @@ async function main() {
             const attachmentTasks = parsedAttachments.map((attachment) =>
               attachmentLimit(async () => {
                 try {
-                  //logger.info(`Downloading attachment ${attachment.filename}`);
-                  await downloadFile(attachment);
+                  const storage = await prisma.storage.findFirst();
+
+                  const storageHandshake = await fetch(
+                    `http://${storage.host}:${storage.port}/handshake`,
+                    {
+                      method: "GET",
+                    }
+                  );
+
+                  if (!storageHandshake.ok) {
+                    throw new Error(
+                      `Failed to handshake with storage server ${storage.host}:${storage.port}`
+                    );
+                  }
+
+                  await downloadFile(attachment, 0, storage);
 
                   let fileDB = await prisma.file.findFirst({
                     where: {
@@ -127,6 +141,17 @@ async function main() {
                       artistId: artist.id,
                     },
                   });
+
+                  if (fileDB && fileDB.storageId !== storage.id) {
+                    await prisma.file.update({
+                      where: {
+                        id: fileDB.id,
+                      },
+                      data: {
+                        storageId: storage.id,
+                      },
+                    });
+                  }
 
                   if (!fileDB) {
                     totalFilesCount++;
@@ -139,6 +164,7 @@ async function main() {
                         filename: attachment.filename,
                         postId: postDB.id,
                         artistId: artist.id,
+                        storageId: storage.id,
                       },
                     });
                 } catch (e) {
