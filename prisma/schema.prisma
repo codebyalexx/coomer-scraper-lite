@@ -43,6 +43,7 @@ model File {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   validated Boolean @default(false)
+  server String @default("local")
 
   postId String?
   post Post? @relation(fields: [postId], references: [id])
