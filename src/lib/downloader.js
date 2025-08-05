@@ -28,8 +28,7 @@ export async function downloadFile(attachment, redirectCount = 0) {
         response.destroy();
         return downloadFile(
           { ...attachment, url: redirectUrl },
-          redirectCount + 1,
-          storage
+          redirectCount + 1
         )
           .then(resolve)
           .catch(reject);
