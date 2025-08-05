@@ -16,13 +16,13 @@ import { discord } from "./lib/discord.js";
 import logger from "./lib/logger.js";
 import prisma from "./lib/prisma.js";
 import { startApiServer } from "./api/server.js";
+import { storeAndDelete } from "./lib/storage.js";
 
 async function main() {
   //logger.error("Stopping scraper due to maintenance");
   //return;
 
   let nodl = process.argv.includes("--nodl");
-  nodl = true;
 
   if (nodl) {
     console.log("Download disabled.");
@@ -119,6 +119,8 @@ async function main() {
             const attachmentTasks = parsedAttachments.map((attachment) =>
               attachmentLimit(async () => {
                 try {
+                  if (fs.existsSync(attachment.outputFilePath)) return;
+
                   const storage = await prisma.storage.findFirst();
 
                   const storageHandshake = await fetch(
@@ -134,7 +136,9 @@ async function main() {
                     );
                   }
 
-                  await downloadFile(attachment, 0, storage);
+                  await downloadFile(attachment, 0);
+
+                  await storeAndDelete(attachment, storage);
 
                   let fileDB = await prisma.file.findFirst({
                     where: {
