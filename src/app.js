@@ -123,17 +123,24 @@ async function main() {
 
                   const storage = await prisma.storage.findFirst();
 
-                  const storageHandshake = await fetch(
-                    `http://${storage.host}:${storage.port}/handshake`,
-                    {
-                      method: "GET",
-                    }
-                  );
+                  let handshakeSuccess = false;
 
-                  if (!storageHandshake.ok) {
-                    throw new Error(
-                      `Failed to handshake with storage server ${storage.host}:${storage.port}`
+                  while (!handshakeSuccess) {
+                    const storageHandshake = await fetch(
+                      `http://${storage.host}:${storage.port}/handshake`,
+                      {
+                        method: "GET",
+                      }
                     );
+
+                    if (storageHandshake.ok) {
+                      handshakeSuccess = true;
+                    } else {
+                      logger.warn(
+                        `Handshake failed with storage server ${storage.host}:${storage.port}, retrying...`
+                      );
+                      await new Promise((resolve) => setTimeout(resolve, 2000)); // attends 2 secondes avant de réessayer
+                    }
                   }
 
                   await downloadFile(attachment, 0);

@@ -24,8 +24,15 @@ app.post("/api/upload", (req, res) => {
       .json({ success: false, error: "Missing filename or artist header" });
   }
 
+  console.log("Receiving file", filename, "for artist", artist);
+
   fs.mkdirSync(path.join(uploadDir, artist), { recursive: true });
   const destPath = path.join(uploadDir, artist, filename);
+
+  if (fs.existsSync(destPath)) {
+    console.log("File already exists, skipping");
+    return res.json({ success: true, filename });
+  }
 
   const writeStream = fs.createWriteStream(destPath);
   pipeline(req, writeStream, (err) => {
