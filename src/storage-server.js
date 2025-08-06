@@ -8,7 +8,7 @@ import express from "express";
 import prisma from "./lib/prisma.js";
 
 const app = express();
-const uploadDir = path.join(process.cwd(), "downloads");
+const uploadDir = path.join(process.env.STORAGE_V_PATH, "downloads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 const PORT = process.env.STORAGE_V_PORT || 3001;
 

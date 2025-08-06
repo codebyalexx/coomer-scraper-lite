@@ -27,7 +27,7 @@ export async function getArtistProfile(artistUrl) {
   const data = await response.json();
 
   await redis.set(`profile:${artistUrl}`, JSON.stringify(data));
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   return {
     name: data.name,
@@ -78,7 +78,7 @@ export async function getArtistPosts(artistUrl, offset = 0) {
   await redis.set(`posts-v2:${artistUrl}:${offset}`, JSON.stringify(data), {
     EX: 60 * 60 * 12,
   });
-  await new Promise((resolve) => setTimeout(resolve, 400));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   return data.map((el) => ({
     id: el.id,
@@ -103,7 +103,7 @@ export async function getPostContent(artistUrl, postId) {
   const data = await response.json();
 
   await redis.set(`post:${artistUrl}:${postId}`, JSON.stringify(data));
-  await new Promise((resolve) => setTimeout(resolve, 400));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   return data;
 }
