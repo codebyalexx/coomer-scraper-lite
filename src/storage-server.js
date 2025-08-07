@@ -42,6 +42,7 @@ app.post("/api/upload", (req, res) => {
         .status(500)
         .json({ success: false, error: "File write failed" });
     }
+    console.log("File", filename, "uploaded successfully for artist", artist);
     return res.json({ success: true, filename });
   });
 });

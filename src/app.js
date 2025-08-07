@@ -121,6 +121,16 @@ async function main() {
                 try {
                   if (fs.existsSync(attachment.outputFilePath)) return;
 
+                  let fileDB = await prisma.file.findFirst({
+                    where: {
+                      filename: attachment.filename,
+                      postId: postDB.id,
+                      artistId: artist.id,
+                    },
+                  });
+
+                  if (fileDB) return;
+
                   const storage = await prisma.storage.findFirst();
 
                   let handshakeSuccess = false;
@@ -147,39 +157,15 @@ async function main() {
 
                   await storeAndDelete(attachment, storage);
 
-                  let fileDB = await prisma.file.findFirst({
-                    where: {
+                  await prisma.file.create({
+                    data: {
+                      url: attachment.url,
                       filename: attachment.filename,
                       postId: postDB.id,
                       artistId: artist.id,
+                      storageId: storage.id,
                     },
                   });
-
-                  if (fileDB && fileDB.storageId !== storage.id) {
-                    await prisma.file.update({
-                      where: {
-                        id: fileDB.id,
-                      },
-                      data: {
-                        storageId: storage.id,
-                      },
-                    });
-                  }
-
-                  if (!fileDB) {
-                    totalFilesCount++;
-                  }
-
-                  if (!fileDB)
-                    fileDB = await prisma.file.create({
-                      data: {
-                        url: attachment.url,
-                        filename: attachment.filename,
-                        postId: postDB.id,
-                        artistId: artist.id,
-                        storageId: storage.id,
-                      },
-                    });
                 } catch (e) {
                   logger.error(
                     `Failed to download attachment ${
