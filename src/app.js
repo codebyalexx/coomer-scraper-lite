@@ -64,7 +64,7 @@ async function main() {
         `Processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}).`
       );
 
-      const postLimit = pLimit(3);
+      const postLimit = pLimit(2);
 
       let totalFilesCount = 0;
 
@@ -114,7 +114,7 @@ async function main() {
               };
             });
 
-            const attachmentLimit = pLimit(2);
+            const attachmentLimit = pLimit(4);
 
             const attachmentTasks = parsedAttachments.map((attachment) =>
               attachmentLimit(async () => {
