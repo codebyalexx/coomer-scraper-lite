@@ -5,6 +5,7 @@ import { rmSync } from "fs";
 import ffmpeg from "fluent-ffmpeg";
 import path from "path";
 import fs from "fs";
+import { exec } from "child_process";
 
 const TAKE = 10;
 
@@ -78,8 +79,8 @@ class Validation {
           rmSync(filePath);
         }
       } else if (type === "video") {
-        if (await this.isVideoCorrupt(filePath)) {
-          console.log(`Vidéo corrompue : ${file}`);
+        if (await this.isVideoCorruptFull(filePath)) {
+          console.log(`Vidéo corrompue : ${JSON.stringify(file)}`);
           await prisma.file.delete({
             where: {
               id: file.id,
@@ -108,6 +109,17 @@ class Validation {
       ffmpeg.ffprobe(filePath, (err, metadata) => {
         resolve(!!err);
       });
+    });
+  }
+
+  isVideoCorruptFull(filePath) {
+    return new Promise((resolve) => {
+      exec(
+        `ffmpeg -v error -i "${filePath}" -f null -`,
+        (err, stdout, stderr) => {
+          resolve(stderr.trim().length > 0);
+        }
+      );
     });
   }
 
