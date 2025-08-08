@@ -27,6 +27,9 @@ class Validation {
       },
       skip: this.loop * TAKE,
       take: TAKE,
+      include: {
+        artist: true,
+      },
     });
 
     if (files.length === 0) {
