@@ -125,10 +125,10 @@ class Validation {
 
   async isImageCorrupt(filePath) {
     try {
-      await sharp(filePath).metadata();
-      return false; // pas corrompue
+      await sharp(filePath).toBuffer({ resolveWithObject: false }); // force décodage complet
+      return false; // lisible entièrement
     } catch (err) {
-      return true; // corrompue
+      return true; // problème lors du décodage
     }
   }
 }
