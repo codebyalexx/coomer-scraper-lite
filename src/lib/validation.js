@@ -4,6 +4,7 @@ import sharp from "sharp";
 import { rmSync } from "fs";
 import ffmpeg from "fluent-ffmpeg";
 import path from "path";
+import fs from "fs";
 
 const TAKE = 10;
 
@@ -45,6 +46,17 @@ class Validation {
         file.artist.identifier,
         file.filename
       );
+
+      if (!fs.existsSync(filePath)) {
+        console.log(`File not found deleting : ${filePath}`);
+        await prisma.file.delete({
+          where: {
+            id: file.id,
+          },
+        });
+        continue;
+      }
+
       if (type === "image") {
         if (await this.isImageCorrupt(filePath)) {
           console.log(`Image corrompue : ${file}`);
