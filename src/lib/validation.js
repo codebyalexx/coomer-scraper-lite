@@ -26,6 +26,7 @@ class Validation {
     const files = await prisma.file.findMany({
       where: {
         validated: false,
+        storage: null,
       },
       skip: this.loop * TAKE,
       take: TAKE,
