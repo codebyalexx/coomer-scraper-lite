@@ -42,6 +42,10 @@ class Validation {
     }
 
     for (const file of files) {
+      if (file.storage) {
+        continue;
+      }
+
       const type = fileTypeByFilename(file.filename);
       const filePath = path.join(
         "/app/downloads/",
