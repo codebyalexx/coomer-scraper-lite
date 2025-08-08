@@ -46,14 +46,15 @@ export async function downloadFile(attachment, redirectCount = 0) {
       /** Timeout */
       const timeout = setTimeout(async () => {
         if (!redisClient || !outputFilePath) return;
-        await redisClient.set(`skip-download-2:${outputFilePath}`, "true", {
-          expiration: 60 * 60 * 1,
-        });
         if (fs.existsSync(outputFilePath)) {
           fs.unlinkSync(outputFilePath);
         }
+        await redisClient.set(`skip-download-2:${outputFilePath}`, "true", {
+          expiration: 60 * 60 * 1,
+        });
+
         return reject(new Error("Time exceeded, trying later."));
-      }, 1000 * 60 * 4);
+      }, 1000 * 60 * 10);
 
       /** Download process */
       fs.mkdirSync(outputPath, { recursive: true });

@@ -15,6 +15,7 @@ class Validation {
 
   run() {
     this.started = true;
+    this.goLoop();
   }
 
   async goLoop() {
