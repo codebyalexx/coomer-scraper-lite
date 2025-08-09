@@ -1,4 +1,5 @@
 import prisma from "../../lib/prisma.js";
+import fetch from "node-fetch";
 
 const getArtists = async (req, res) => {
   const offset = parseInt(req.query.offset, 10) || 0;
@@ -31,9 +32,30 @@ const getArtist = async (req, res) => {
   const postLimit = parseInt(req.query.postLimit, 10) || 12;
 
   try {
+    const storage = await prisma.storage.findFirst({});
+    let handshakeSuccess = false;
+
+    if (storage) {
+      const storageHandshake = await fetch(
+        `http://${storage.host}:${storage.port}/handshake`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (storageHandshake.ok) {
+        handshakeSuccess = true;
+      } else {
+        logger.warn(
+          `Handshake failed with storage server ${storage.host}:${storage.port}, retrying...`
+        );
+      }
+    }
+
     const artist = await prisma.artist.findUnique({
       where: {
         id: req.params.id,
+        ...(handshakeSuccess ? {} : { storageId: null }),
       },
       include: {
         posts: {
@@ -49,6 +71,7 @@ const getArtist = async (req, res) => {
         },
       },
     });
+
     if (!artist) {
       return res.status(404).json({ error: "Artist not found" });
     }
