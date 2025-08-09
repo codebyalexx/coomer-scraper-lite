@@ -74,12 +74,14 @@ export const getFileStream = async (req, res) => {
         return res.status(500).json({ error: "Failed to send file" });
       }
 
+      const rangeHeader = req.headers.range || "";
+
       const storageResponse = await fetch(
         `http://${storage.host}:${storage.port}/api/filestream/${file.id}`,
         {
           method: "GET",
           headers: {
-            Range: req.headers.range,
+            Range: rangeHeader,
           },
         }
       );
