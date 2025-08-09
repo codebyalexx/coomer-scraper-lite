@@ -6,6 +6,8 @@ import fs from "fs";
 import { pipeline } from "stream";
 import express from "express";
 import prisma from "./lib/prisma.js";
+import { fileTypeByFilename } from "./lib/utils.js";
+import { fileMimeByFilename } from "./lib/utils.js";
 
 const app = express();
 const uploadDir = path.join(process.env.STORAGE_V_PATH, "downloads");
@@ -49,6 +51,86 @@ app.post("/api/upload", (req, res) => {
 
 app.get("/handshake", (req, res) => {
   res.json({ success: true });
+});
+
+app.get("/api/filestream/:id", async (req, res) => {
+  try {
+    // 1. Récupérer le fichier depuis la DB
+    const file = await prisma.file.findUnique({
+      where: { id: req.params.id },
+      include: {
+        artist: true,
+        storage: true,
+      },
+    });
+
+    if (!file) {
+      return res.status(404).json({ error: "File not found on the database" });
+    }
+
+    // 2. Construire le chemin local
+    const filePath = path.join(
+      uploadDir,
+      file.artist.identifier,
+      file.filename
+    );
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "File not found on the disk" });
+    }
+
+    // 3. Déterminer le type (image / vidéo)
+    const fileType = fileTypeByFilename(file.filename);
+
+    console.log("File type:", fileType);
+    console.log("File path:", filePath);
+
+    if (fileType === "image") {
+      const absolutePath = path.resolve(filePath);
+      // Image → envoi complet
+      res.setHeader("Content-Type", fileMimeByFilename(file.filename));
+      fs.createReadStream(absolutePath).pipe(res);
+    } else if (fileType === "video") {
+      // 4. Vidéo → gestion du Range
+      const stat = fs.statSync(filePath);
+      const fileSize = stat.size;
+      const range = req.headers.range;
+
+      if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+        if (start >= fileSize) {
+          return res.status(416).send("Requested range not satisfiable");
+        }
+
+        const chunkSize = end - start + 1;
+        const fileStream = fs.createReadStream(filePath, { start, end });
+
+        res.writeHead(206, {
+          "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+          "Accept-Ranges": "bytes",
+          "Content-Length": chunkSize,
+          "Content-Type": fileMimeByFilename(file.filename),
+        });
+
+        return fileStream.pipe(res);
+      } else {
+        res.writeHead(200, {
+          "Content-Length": fileSize,
+          "Content-Type": fileMimeByFilename(file.filename),
+          "Accept-Ranges": "bytes",
+        });
+        fs.createReadStream(filePath).pipe(res);
+      }
+    } else {
+      return res.status(500).json({ error: "File type not supported" });
+    }
+  } catch (err) {
+    console.error("Error in /api/filestream:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 app.listen(PORT, async () => {

@@ -53,10 +53,50 @@ export const getFileStream = async (req, res) => {
       },
       include: {
         artist: true,
+        storage: true,
       },
     });
     if (!file) {
       return res.status(404).json({ error: "File not found on the database" });
+    }
+
+    if (file.storage) {
+      const storage = await prisma.storage.findFirst({});
+      const storageHandshake = await fetch(
+        `http://${storage.host}:${storage.port}/handshake`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (!storageHandshake.ok) {
+        return res.status(500).json({ error: "Failed to send file" });
+      }
+
+      const fetchOptions = {
+        method: "GET",
+        headers: {},
+      };
+      if (req.headers.range) {
+        fetchOptions.headers.Range = req.headers.range;
+      }
+
+      const storageResponse = await fetch(
+        `http://${storage.host}:${storage.port}/api/filestream/${file.id}`,
+        fetchOptions
+      );
+
+      if (!storageResponse.ok && storageResponse.status !== 206) {
+        return res
+          .status(storageResponse.status)
+          .json({ error: "Failed to fetch file from storage" });
+      }
+      storageResponse.headers.forEach((value, key) => {
+        res.setHeader(key, value);
+      });
+      res.status(storageResponse.status);
+      storageResponse.body.pipe(res);
+      return;
     }
 
     const fileType = fileTypeByFilename(file.filename);
