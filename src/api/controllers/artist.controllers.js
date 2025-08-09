@@ -1,5 +1,4 @@
 import prisma from "../../lib/prisma.js";
-import fetch from "node-fetch";
 
 const getArtists = async (req, res) => {
   const offset = parseInt(req.query.offset, 10) || 0;
