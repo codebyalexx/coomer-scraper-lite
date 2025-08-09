@@ -6,6 +6,7 @@ import redisClient from "../../lib/redis.js";
 import logger from "../../lib/logger.js";
 import { exec } from "child_process";
 import { fileMimeByFilename } from "../../lib/utils.js";
+import { Readable } from "stream";
 
 export const getFiles = async (req, res) => {
   try {
@@ -73,29 +74,26 @@ export const getFileStream = async (req, res) => {
         return res.status(500).json({ error: "Failed to send file" });
       }
 
-      const fetchOptions = {
-        method: "GET",
-        headers: {},
-      };
-      if (req.headers.range) {
-        fetchOptions.headers.Range = req.headers.range;
-      }
-
-      const storageResponse = await fetch(
-        `http://${storage.host}:${storage.port}/api/filestream/${file.id}`,
-        fetchOptions
-      );
+      const storageResponse = await fetch(url, options);
 
       if (!storageResponse.ok && storageResponse.status !== 206) {
         return res
           .status(storageResponse.status)
           .json({ error: "Failed to fetch file from storage" });
       }
+
+      // Convertir WHATWG ReadableStream en Node.js Readable
+      const nodeStream = Readable.fromWeb(storageResponse.body);
+
+      // Copier les headers
       storageResponse.headers.forEach((value, key) => {
         res.setHeader(key, value);
       });
       res.status(storageResponse.status);
-      storageResponse.body.pipe(res);
+
+      // Stream vers la réponse
+      nodeStream.pipe(res);
+
       return;
     }
 
