@@ -34,11 +34,7 @@ async function main() {
   let postSelectionLimit = 150;
 
   const uniqueArtists = await prisma.artist.findMany({
-    orderBy: {
-      posts: {
-        _count: "asc",
-      },
-    },
+    orderBy: [{ isException: "desc" }, { posts: { _count: "asc" } }],
   });
 
   const postSelectionLimitKey = await redisClient.get("post-selection-limit");
