@@ -81,7 +81,6 @@ class Validation {
               validated: true,
             },
           });
-          rmSync(filePath);
         }
       } else if (type === "video") {
         if (await this.isVideoCorruptFull(filePath)) {
