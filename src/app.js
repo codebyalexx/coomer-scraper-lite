@@ -210,49 +210,7 @@ async function main() {
   main();
 }
 
-async function restore() {
-  console.log("🚀 Début du nettoyage...");
-
-  const files = await prisma.file.findMany({
-    where: { validated: true },
-    include: {
-      artist: true,
-    },
-  });
-
-  console.log(`📂 ${files.length} fichiers à vérifier...`);
-
-  let deletedCount = 0;
-
-  for (const file of files) {
-    const fileType = fileTypeByFilename(file.filename);
-
-    if (fileType === "image" && file.storageId === null) {
-      const filePath = path.join(
-        "/app/downloads/",
-        file.artist.identifier,
-        file.filename
-      );
-
-      if (!fs.existsSync(filePath)) {
-        console.log(
-          `❌ Fichier manquant : ${file.filename} → suppression en DB`
-        );
-        await prisma.file.delete({
-          where: { id: file.id },
-        });
-        deletedCount++;
-      }
-    }
-  }
-
-  console.log(
-    `✅ Nettoyage terminé : ${deletedCount} fichiers supprimés en DB.`
-  );
-}
-
 discord();
-//main();
-restore();
+main();
 startApiServer();
 validation.run();
