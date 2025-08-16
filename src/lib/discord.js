@@ -29,7 +29,7 @@ export async function discord() {
       let added = 0;
       let notAdded = 0;
 
-      logger.info(`Received ${matches.length} links from Discord`);
+      console.log(`Received ${matches.length} links from Discord`);
       for (const url of matches) {
         try {
           const urlObj = new URL(url);
@@ -44,11 +44,11 @@ export async function discord() {
             },
           });
           if (artist) {
-            logger.info(`Artist ${url} already exists`);
+            console.info(`Artist ${url} already exists`);
             notAdded++;
             continue;
           }
-          logger.info(`Importing ${url} from Discord...`);
+          console.info(`Importing ${url} from Discord...`);
           const artistDetails = await getArtistProfile(artistURL);
           await prisma.artist.create({
             data: {
@@ -61,7 +61,7 @@ export async function discord() {
           });
           added++;
         } catch (e) {
-          logger.error(
+          console.error(
             `Failed to import ${url} from Discord, error: ${
               e.message || "no error message"
             }`
@@ -70,7 +70,7 @@ export async function discord() {
         }
       }
       await message.react("✅");
-      logger.info(
+      console.info(
         `Added ${added} artists, ${notAdded} already exists OR error`
       );
       await message.reply(
