@@ -85,6 +85,7 @@ export async function discord() {
       );
     } else {
       await message.react("✅");
+      await message.reply(`Added ${added} artists, ${notAdded} already exists`);
     }
   });
 
