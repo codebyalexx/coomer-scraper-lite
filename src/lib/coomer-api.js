@@ -16,7 +16,12 @@ export async function getArtistProfile(artistUrl) {
   if (cached) return JSON.parse(cached);
 
   const response = await fetch(
-    `${apiBaseURL}/v1/${service}/user/${id}/profile`
+    `${apiBaseURL}/v1/${service}/user/${id}/profile`,
+    {
+      headers: {
+        Accept: "text/css",
+      },
+    }
   );
 
   if (!response.ok) {
@@ -66,7 +71,12 @@ export async function getArtistPosts(artistUrl, offset = 0) {
   if (cached) return JSON.parse(cached);
 
   const response = await fetch(
-    `${apiBaseURL}/v1/${service}/user/${id}?o=${offset}`
+    `${apiBaseURL}/v1/${service}/user/${id}?o=${offset}`,
+    {
+      headers: {
+        Accept: "text/css",
+      },
+    }
   );
 
   if (!response.ok) {
@@ -93,7 +103,12 @@ export async function getPostContent(artistUrl, postId) {
   if (cached) return JSON.parse(cached);
 
   const response = await fetch(
-    `${apiBaseURL}/v1/${service}/user/${id}/post/${postId}`
+    `${apiBaseURL}/v1/${service}/user/${id}/post/${postId}`,
+    {
+      headers: {
+        Accept: "text/css",
+      },
+    }
   );
 
   if (!response.ok) {
