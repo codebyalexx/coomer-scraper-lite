@@ -76,10 +76,8 @@ export async function discord() {
     }
     if (emsg) {
       await message.react("❌");
-      console.log(`Failed to import ${url} from Discord, error: ${emsg}`);
-      await message.reply(
-        `Failed to import ${url} from Discord, error: ${emsg}`
-      );
+      console.log(`Failed to import X from Discord, error: ${emsg}`);
+      await message.reply(`Failed to import X from Discord, error: ${emsg}`);
     } else {
       await message.react("✅");
       await message.reply(`Added ${added} artists, ${notAdded} already exists`);
