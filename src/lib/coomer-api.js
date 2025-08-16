@@ -10,8 +10,6 @@ export function getArtistDetailsFromURL(artistUrl) {
 }
 
 export async function getArtistProfile(artistUrl) {
-  console.log(artistUrl);
-
   const { service, id } = getArtistDetailsFromURL(artistUrl);
 
   const cached = await redis.get(`profile2:${artistUrl}`);
@@ -22,7 +20,8 @@ export async function getArtistProfile(artistUrl) {
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch artist profile");
+    const error = await response.json();
+    throw new Error(`Failed to fetch artist profile: ${JSON.stringify(error)}`);
     return;
   }
 
