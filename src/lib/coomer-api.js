@@ -20,8 +20,8 @@ export async function getArtistProfile(artistUrl) {
   );
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`Failed to fetch artist profile: ${JSON.stringify(error)}`);
+    const error = await response.text();
+    throw new Error(`Failed to fetch artist profile: ${error}`);
     return;
   }
 
