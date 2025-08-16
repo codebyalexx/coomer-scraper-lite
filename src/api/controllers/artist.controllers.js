@@ -54,7 +54,6 @@ const getArtist = async (req, res) => {
     const artist = await prisma.artist.findUnique({
       where: {
         id: req.params.id,
-        ...(handshakeSuccess ? {} : { storageId: null }),
       },
       include: {
         posts: {
