@@ -43,11 +43,11 @@ export async function getArtistProfile(artistUrl) {
   };
 }
 
-export async function getAllArtistPosts(artistUrl) {
+export async function getAllArtistPosts(artistUrl, postsCount = 50) {
   let offset = 0;
   const allPosts = [];
 
-  while (true) {
+  while (allPosts.length < postsCount) {
     await new Promise((resolve) =>
       setTimeout(() => {
         resolve();

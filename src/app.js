@@ -36,7 +36,11 @@ async function main() {
   let artistsProcessed = 0;
   for (const artist of uniqueArtists) {
     try {
-      const posts = await getAllArtistPosts(artist.url);
+      const artistProfile = await getArtistProfile(artist.url);
+      const posts = await getAllArtistPosts(
+        artist.url,
+        artistProfile.post_count
+      );
 
       let selectedPosts =
         posts.length > postSelectionLimit
