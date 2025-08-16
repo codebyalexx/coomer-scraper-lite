@@ -138,6 +138,8 @@ async function main() {
                       artistId: artist.id,
                     },
                   });
+
+                  totalFilesCount++;
                 } catch (e) {
                   console.error(
                     `Failed to download attachment ${
@@ -184,4 +186,4 @@ async function main() {
 discord();
 main();
 startApiServer();
-validation.run();
+//validation.run();

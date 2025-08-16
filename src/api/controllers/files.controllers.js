@@ -53,14 +53,13 @@ export const getFileStream = async (req, res) => {
       },
       include: {
         artist: true,
-        storage: true,
       },
     });
     if (!file) {
       return res.status(404).json({ error: "File not found on the database" });
     }
 
-    if (file.storage) {
+    /*if (file.storage) {
       const storage = await prisma.storage.findFirst({});
       const storageHandshake = await fetch(
         `http://${storage.host}:${storage.port}/handshake`,
@@ -104,7 +103,7 @@ export const getFileStream = async (req, res) => {
       nodeStream.pipe(res);
 
       return;
-    }
+    }*/
 
     const fileType = fileTypeByFilename(file.filename);
     const filePath = path.join(

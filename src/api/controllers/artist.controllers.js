@@ -31,7 +31,7 @@ const getArtist = async (req, res) => {
   const postLimit = parseInt(req.query.postLimit, 10) || 12;
 
   try {
-    const storage = await prisma.storage.findFirst({});
+    /*const storage = await prisma.storage.findFirst({});
     let handshakeSuccess = false;
 
     if (storage) {
@@ -49,7 +49,7 @@ const getArtist = async (req, res) => {
           `Handshake failed with storage server ${storage.host}:${storage.port}, retrying...`
         );
       }
-    }
+    }*/
 
     const artist = await prisma.artist.findUnique({
       where: {
