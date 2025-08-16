@@ -23,6 +23,7 @@ export async function discord() {
 
     const regex = /https?:\/\/(?:www\.)?coomer\.st(?:\/\S*)?/gi;
     const matches = content.match(regex);
+    let emsg = null;
 
     if (matches) {
       let added = 0;
@@ -65,16 +66,25 @@ export async function discord() {
               e.message || "no error message"
             }`
           );
+          emsg = e.message;
           notAdded++;
         }
       }
-      await message.react("✅");
       console.log(
         `Added ${added} artists, ${notAdded} already exists OR error`
       );
       await message.reply(
         `Added ${added} artists, ${notAdded} already exists OR error`
       );
+    }
+    if (emsg) {
+      await message.react("❌");
+      console.log(`Failed to import ${url} from Discord, error: ${emsg}`);
+      await message.reply(
+        `Failed to import ${url} from Discord, error: ${emsg}`
+      );
+    } else {
+      await message.react("✅");
     }
   });
 
