@@ -80,7 +80,8 @@ export async function getArtistPosts(artistUrl, offset = 0) {
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch artist posts");
+    const error = await response.text();
+    throw new Error(`Failed to fetch artist posts: ${error}`);
     return;
   }
 
@@ -112,7 +113,8 @@ export async function getPostContent(artistUrl, postId) {
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch post content");
+    const error = await response.text();
+    throw new Error(`Failed to fetch post content: ${error}`);
     return;
   }
 
