@@ -128,31 +128,9 @@ async function main() {
 
                   if (fileDB) return;
 
-                  const storage = await prisma.storage.findFirst();
-
-                  let handshakeSuccess = false;
-
-                  while (!handshakeSuccess) {
-                    const storageHandshake = await fetch(
-                      `http://${storage.host}:${storage.port}/handshake`,
-                      {
-                        method: "GET",
-                      }
-                    );
-
-                    if (storageHandshake.ok) {
-                      handshakeSuccess = true;
-                    } else {
-                      logger.warn(
-                        `Handshake failed with storage server ${storage.host}:${storage.port}, retrying...`
-                      );
-                      await new Promise((resolve) => setTimeout(resolve, 2000)); // attends 2 secondes avant de réessayer
-                    }
-                  }
-
                   await downloadFile(attachment, 0);
 
-                  await storeAndDelete(attachment, storage);
+                  // await storeAndDelete(attachment, storage);
 
                   await prisma.file.create({
                     data: {
@@ -160,7 +138,6 @@ async function main() {
                       filename: attachment.filename,
                       postId: postDB.id,
                       artistId: artist.id,
-                      storageId: storage.id,
                     },
                   });
                 } catch (e) {

@@ -7,7 +7,7 @@ import path from "path";
 import fs from "fs";
 import { exec } from "child_process";
 
-const TAKE = 10;
+const TAKE = 150;
 
 class Validation {
   constructor() {
@@ -21,8 +21,6 @@ class Validation {
   }
 
   async goLoop() {
-    console.log(`Validation loop ${this.loop}`);
-
     const files = await prisma.file.findMany({
       where: {
         validated: false,
