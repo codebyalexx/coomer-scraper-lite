@@ -5,9 +5,6 @@ import path from "path";
 import fs from "fs";
 import { validation } from "./lib/validation.js";
 
-fs.rmSync(path.join(process.cwd(), "combined.log"));
-fs.rmSync(path.join(process.cwd(), "error.log"));
-
 import { getAllArtistPosts, getPostContent } from "./lib/coomer-api.js";
 import { downloadFile } from "./lib/downloader.js";
 import pLimit from "p-limit";
@@ -15,8 +12,6 @@ import redisClient from "./lib/redis.js";
 import { discord } from "./lib/discord.js";
 import prisma from "./lib/prisma.js";
 import { startApiServer } from "./api/server.js";
-import { storeAndDelete } from "./lib/storage.js";
-import { fileTypeByFilename } from "./lib/utils.js";
 
 async function main() {
   let nodl = process.argv.includes("--nodl");
