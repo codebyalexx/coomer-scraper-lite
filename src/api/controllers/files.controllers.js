@@ -3,7 +3,6 @@ import path from "path";
 import fs from "fs";
 import { fileTypeByFilename } from "../../lib/utils.js";
 import redisClient from "../../lib/redis.js";
-import logger from "../../lib/logger.js";
 import { exec } from "child_process";
 import { fileMimeByFilename } from "../../lib/utils.js";
 import { Readable } from "stream";
@@ -121,7 +120,7 @@ export const getFileStream = async (req, res) => {
     if (fileType === "image") {
       res.sendFile(filePath, (err) => {
         if (err) {
-          logger.error(
+          console.error(
             `Failed to send file ${filePath}: ${
               err.message || "no error message"
             }`
@@ -218,7 +217,7 @@ export const getVideoThumbnail = async (req, res) => {
     const ffmpegCmd = `ffmpeg -ss 00:00:01 -i "${videoPath}" -frames:v 1 -q:v 2 "${thumbnailPath}"`;
     exec(ffmpegCmd, (error) => {
       if (error) {
-        logger.error(`Failed to generate thumbnail: ${error.message}`);
+        console.error(`Failed to generate thumbnail: ${error.message}`);
         return res.status(500).json({ error: "Failed to generate thumbnail" });
       }
       return res.sendFile(thumbnailPath);

@@ -1,5 +1,4 @@
 import { Client, GatewayIntentBits } from "discord.js";
-import logger from "./logger.js";
 import { getArtistProfile } from "./coomer-api.js";
 import prisma from "./prisma.js";
 
@@ -14,7 +13,7 @@ export async function discord() {
   });
 
   client.once("ready", () => {
-    logger.info(`✅ Connected to Discord API as ${client.user.tag}`);
+    console.log(`✅ Connected to Discord API as ${client.user.tag}`);
   });
 
   client.on("messageCreate", async (message) => {

@@ -1,4 +1,3 @@
-import logger from "./logger.js";
 import prisma from "./prisma.js";
 import redisClient from "./redis.js";
 import { getAllArtistPosts } from "./coomer-api.js";
@@ -27,7 +26,7 @@ class Seed {
       if (postSelectionLimitKey)
         postSelectionLimit = parseInt(postSelectionLimitKey);
 
-      logger.info(`Seeding started for ${uniqueArtists.length} artists`);
+      console.log(`Seeding started for ${uniqueArtists.length} artists`);
 
       for (const artist of uniqueArtists) {
         try {
@@ -113,7 +112,7 @@ class Seed {
                           });
                       }
                     } catch (e) {
-                      logger.error(
+                      console.error(
                         `Failed to process seeding attachment ${
                           attachment.filename
                         }, error: ${e.message || "no error message"}`
@@ -124,7 +123,7 @@ class Seed {
 
                 await Promise.all(attachmentTasks);
               } catch (e) {
-                logger.error(
+                console.error(
                   `Failed to process post seeding ${post.id}, error: ${
                     e.message || "no error message"
                   }`
@@ -135,7 +134,7 @@ class Seed {
 
           await Promise.all(postTasks);
         } catch (e) {
-          logger.error(
+          console.error(
             `Failed to process artist seeding ${artist.name}, error: ${
               e.message || "no error message"
             }`
@@ -143,7 +142,7 @@ class Seed {
         }
       }
     } catch (error) {
-      logger.error(
+      console.error(
         `Error occured while seeding: ${error.message || "no error message"}`
       );
     }

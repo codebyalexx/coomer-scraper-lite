@@ -13,21 +13,16 @@ import { downloadFile } from "./lib/downloader.js";
 import pLimit from "p-limit";
 import redisClient from "./lib/redis.js";
 import { discord } from "./lib/discord.js";
-import logger from "./lib/logger.js";
 import prisma from "./lib/prisma.js";
 import { startApiServer } from "./api/server.js";
 import { storeAndDelete } from "./lib/storage.js";
 import { fileTypeByFilename } from "./lib/utils.js";
 
 async function main() {
-  //logger.error("Stopping scraper due to maintenance");
-  //return;
-
   let nodl = process.argv.includes("--nodl");
 
   if (nodl) {
     console.log("Download disabled.");
-    logger.info("Download disabled, not starting scraper.");
     return;
   }
 
@@ -41,7 +36,7 @@ async function main() {
   if (postSelectionLimitKey)
     postSelectionLimit = parseInt(postSelectionLimitKey);
 
-  logger.info(`Starting scraper loop with ${uniqueArtists.length} artists.`);
+  console.log(`Starting scraper loop with ${uniqueArtists.length} artists.`);
 
   let artistsProcessed = 0;
   for (const artist of uniqueArtists) {
@@ -57,7 +52,7 @@ async function main() {
         selectedPosts = posts;
       }
 
-      logger.info(
+      console.log(
         `Processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}).`
       );
 
@@ -76,9 +71,9 @@ async function main() {
             if (postContent?.videos)
               attachments = [...attachments, ...postContent.videos];
 
-            //logger.info(
-            //  `Found ${attachments.length} attachments for post ${post.id}`
-            //);
+            console.log(
+              `Found ${attachments.length} attachments for post ${post.id}`
+            );
 
             let postDB = await prisma.post.findFirst({
               where: {
@@ -141,7 +136,7 @@ async function main() {
                     },
                   });
                 } catch (e) {
-                  logger.error(
+                  console.error(
                     `Failed to download attachment ${
                       attachment.filename
                     }, error: ${e.message || "no error message"}`
@@ -152,7 +147,7 @@ async function main() {
 
             await Promise.all(attachmentTasks);
           } catch (e) {
-            logger.error(
+            console.error(
               `Failed to process post ${post.id}, error: ${
                 e.message || "no error message"
               }`
@@ -163,13 +158,13 @@ async function main() {
 
       await Promise.all(postTasks);
 
-      logger.info(
+      console.log(
         `Finished processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}). Processed ${totalFilesCount} files!`
       );
 
       artistsProcessed++;
     } catch (e) {
-      logger.error(
+      console.error(
         `Failed to process artist ${artist.name}, error: ${
           e.message || "no error message"
         }`

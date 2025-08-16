@@ -45,7 +45,7 @@ const getArtist = async (req, res) => {
       if (storageHandshake.ok) {
         handshakeSuccess = true;
       } else {
-        logger.warn(
+        console.error(
           `Handshake failed with storage server ${storage.host}:${storage.port}, retrying...`
         );
       }
