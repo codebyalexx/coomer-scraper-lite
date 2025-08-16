@@ -170,7 +170,7 @@ async function main() {
   // Loop increasing post selection limit
   // postSelectionLimit += postSelectionLimitIncrease;
   //await redisClient.set("post-selection-limit", postSelectionLimit);
-  main();
+  setTimeout(() => main(), 15000);
 }
 
 discord();
