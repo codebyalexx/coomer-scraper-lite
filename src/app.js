@@ -186,4 +186,4 @@ async function main() {
 discord();
 main();
 startApiServer();
-//validation.run();
+validation.run();
