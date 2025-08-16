@@ -44,11 +44,11 @@ export async function discord() {
             },
           });
           if (artist) {
-            console.info(`Artist ${url} already exists`);
+            console.log(`Artist ${url} already exists`);
             notAdded++;
             continue;
           }
-          console.info(`Importing ${url} from Discord...`);
+          console.log(`Importing ${url} from Discord...`);
           const artistDetails = await getArtistProfile(artistURL);
           await prisma.artist.create({
             data: {
@@ -70,7 +70,7 @@ export async function discord() {
         }
       }
       await message.react("✅");
-      console.info(
+      console.log(
         `Added ${added} artists, ${notAdded} already exists OR error`
       );
       await message.reply(

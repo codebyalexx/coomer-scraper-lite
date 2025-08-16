@@ -12,7 +12,7 @@ export function getArtistDetailsFromURL(artistUrl) {
 export async function getArtistProfile(artistUrl) {
   const { service, id } = getArtistDetailsFromURL(artistUrl);
 
-  const cached = await redis.get(`profile:${artistUrl}`);
+  const cached = await redis.get(`profile2:${artistUrl}`);
   if (cached) return JSON.parse(cached);
 
   const response = await fetch(
@@ -26,7 +26,7 @@ export async function getArtistProfile(artistUrl) {
 
   const data = await response.json();
 
-  await redis.set(`profile:${artistUrl}`, JSON.stringify(data));
+  await redis.set(`profile2:${artistUrl}`, JSON.stringify(data));
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
   return {
