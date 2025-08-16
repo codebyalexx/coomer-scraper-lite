@@ -73,9 +73,6 @@ export async function discord() {
       console.log(
         `Added ${added} artists, ${notAdded} already exists OR error`
       );
-      await message.reply(
-        `Added ${added} artists, ${notAdded} already exists OR error`
-      );
     }
     if (emsg) {
       await message.react("❌");
