@@ -5,7 +5,11 @@ import path from "path";
 import fs from "fs";
 import { validation } from "./lib/validation.js";
 
-import { getAllArtistPosts, getPostContent } from "./lib/coomer-api.js";
+import {
+  getAllArtistPosts,
+  getArtistProfile,
+  getPostContent,
+} from "./lib/coomer-api.js";
 import { downloadFile } from "./lib/downloader.js";
 import pLimit from "p-limit";
 import redisClient from "./lib/redis.js";
