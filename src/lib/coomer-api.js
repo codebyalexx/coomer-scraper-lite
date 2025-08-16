@@ -10,6 +10,8 @@ export function getArtistDetailsFromURL(artistUrl) {
 }
 
 export async function getArtistProfile(artistUrl) {
+  console.log(artistUrl);
+
   const { service, id } = getArtistDetailsFromURL(artistUrl);
 
   const cached = await redis.get(`profile2:${artistUrl}`);
