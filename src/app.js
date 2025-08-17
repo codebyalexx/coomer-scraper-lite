@@ -25,7 +25,12 @@ async function main() {
     return;
   }
 
+  let cachedPostSelectionLimit = await redisClient.get("post-selection-limit");
   let postSelectionLimit = 150;
+
+  if (cachedPostSelectionLimit) {
+    postSelectionLimit = parseInt(cachedPostSelectionLimit);
+  }
 
   const uniqueArtists = await prisma.artist.findMany({
     orderBy: [{ isException: "desc" }, { posts: { _count: "asc" } }],
@@ -178,8 +183,8 @@ async function main() {
   }
 
   // Loop increasing post selection limit
-  // postSelectionLimit += postSelectionLimitIncrease;
-  //await redisClient.set("post-selection-limit", postSelectionLimit);
+  postSelectionLimit += postSelectionLimitIncrease;
+  await redisClient.set("post-selection-limit", postSelectionLimit);
   setTimeout(() => main(), 15000);
 }
 
