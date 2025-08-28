@@ -185,8 +185,11 @@ async function main() {
   }
 
   // Loop increasing post selection limit
+  let postSelectionLimitIncrease = 10;
+  let maxPostSelectionLimit = 250;
   postSelectionLimit += postSelectionLimitIncrease;
-  await redisClient.set("post-selection-limit", postSelectionLimit);
+  if (postSelectionLimit < maxPostSelectionLimit)
+    await redisClient.set("post-selection-limit", postSelectionLimit);
   setTimeout(() => main(), 15000);
 }
 
