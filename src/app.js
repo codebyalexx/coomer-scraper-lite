@@ -32,6 +32,8 @@ async function main() {
     postSelectionLimit = parseInt(cachedPostSelectionLimit);
   }
 
+  console.log(`Post selection limit: ${postSelectionLimit}`);
+
   const uniqueArtists = await prisma.artist.findMany({
     orderBy: [{ isException: "desc" }, { posts: { _count: "asc" } }],
   });
