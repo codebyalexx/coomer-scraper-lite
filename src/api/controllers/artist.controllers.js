@@ -79,4 +79,20 @@ const getArtist = async (req, res) => {
   }
 };
 
-export { getArtists, getArtist };
+const setArtistException = async (req, res) => {
+  try {
+    const artist = await prisma.artist.update({
+      where: {
+        id: req.params.id,
+      },
+      data: {
+        isException: req.body.isException,
+      },
+    });
+    res.status(200).json(artist);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export { getArtists, getArtist, setArtistException };
