@@ -50,7 +50,7 @@ async function main() {
       const artistProfile = await getArtistProfile(artist.url);
       const posts = await getAllArtistPosts(
         artist.url,
-        artistProfile.post_count
+        artistProfile.post_count,
       );
 
       let selectedPosts =
@@ -63,7 +63,7 @@ async function main() {
       }
 
       console.log(
-        `Processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}).`
+        `Processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}).`,
       );
 
       const postLimit = pLimit(2);
@@ -82,7 +82,7 @@ async function main() {
               attachments = [...attachments, ...postContent.videos];
 
             console.log(
-              `Found ${attachments.length} attachments for post ${post.id}`
+              `Found ${attachments.length} attachments for post ${post.id}`,
             );
 
             let postDB = await prisma.post.findFirst({
@@ -105,12 +105,15 @@ async function main() {
                 url: `https://coomer.st/data${attachment.path}`,
                 path: "/data" + attachment.path,
                 filename: attachment.name,
-                outputPath: path.join("/app/downloads/", artist.identifier),
+                outputPath: path.join(
+                  process.env.DOWNLOAD_DIR,
+                  artist.identifier,
+                ),
                 outputFilename: attachment.name,
                 outputFilePath: path.join(
-                  "/app/downloads/",
+                  process.env.DOWNLOAD_DIR,
                   artist.identifier,
-                  attachment.name
+                  attachment.name,
                 ),
                 artistIdentifier: artist.identifier,
               };
@@ -151,10 +154,10 @@ async function main() {
                   console.error(
                     `Failed to download attachment ${
                       attachment.filename
-                    }, error: ${e.message || "no error message"}`
+                    }, error: ${e.message || "no error message"}`,
                   );
                 }
-              })
+              }),
             );
 
             await Promise.all(attachmentTasks);
@@ -162,16 +165,16 @@ async function main() {
             console.error(
               `Failed to process post ${post.id}, error: ${
                 e.message || "no error message"
-              }`
+              }`,
             );
           }
-        })
+        }),
       );
 
       await Promise.all(postTasks);
 
       console.log(
-        `Finished processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}). Processed ${totalFilesCount} files!`
+        `Finished processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}). Processed ${totalFilesCount} files!`,
       );
 
       artistsProcessed++;
@@ -179,7 +182,7 @@ async function main() {
       console.error(
         `Failed to process artist ${artist.name}, error: ${
           e.message || "no error message"
-        }`
+        }`,
       );
     }
   }

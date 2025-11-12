@@ -107,9 +107,9 @@ export const getFileStream = async (req, res) => {
 
     const fileType = fileTypeByFilename(file.filename);
     const filePath = path.join(
-      "/app/downloads/",
+      process.env.DOWNLOAD_DIR,
       file.artist.identifier,
-      file.filename
+      file.filename,
     );
 
     if (!fs.existsSync(filePath)) {
@@ -122,7 +122,7 @@ export const getFileStream = async (req, res) => {
           console.error(
             `Failed to send file ${filePath}: ${
               err.message || "no error message"
-            }`
+            }`,
           );
           return res.status(500).json({ error: "Failed to send file" });
         }
@@ -199,14 +199,14 @@ export const getVideoThumbnail = async (req, res) => {
     }
 
     const thumbnailPath = path.join(
-      "/app/downloads/",
+      process.env.DOWNLOAD_DIR,
       file.artist.identifier,
-      `${file.filename}.thumbnail.jpg`
+      `${file.filename}.thumbnail.jpg`,
     );
     const videoPath = path.join(
-      "/app/downloads/",
+      process.env.DOWNLOAD_DIR,
       file.artist.identifier,
-      file.filename
+      file.filename,
     );
 
     if (fs.existsSync(thumbnailPath)) {

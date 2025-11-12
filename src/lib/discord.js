@@ -25,10 +25,9 @@ export async function discord() {
     const matches = content.match(regex);
     let emsg = null;
 
+    let added = 0;
+    let notAdded = 0;
     if (matches) {
-      let added = 0;
-      let notAdded = 0;
-
       console.log(`Received ${matches.length} links from Discord`);
       for (const url of matches) {
         try {
@@ -64,14 +63,14 @@ export async function discord() {
           console.error(
             `Failed to import ${url} from Discord, error: ${
               e.message || "no error message"
-            }`
+            }`,
           );
           emsg = e.message;
           notAdded++;
         }
       }
       console.log(
-        `Added ${added} artists, ${notAdded} already exists OR error`
+        `Added ${added} artists, ${notAdded} already exists OR error`,
       );
     }
     if (emsg) {

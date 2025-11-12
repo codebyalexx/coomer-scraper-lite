@@ -21,7 +21,7 @@ class Seed {
       let postSelectionLimit = 150;
       const uniqueArtists = await prisma.artist.findMany();
       const postSelectionLimitKey = await redisClient.get(
-        "post-selection-limit"
+        "post-selection-limit",
       );
       if (postSelectionLimitKey)
         postSelectionLimit = parseInt(postSelectionLimitKey);
@@ -77,12 +77,15 @@ class Seed {
                     url: `https://coomer.st/data${attachment.path}`,
                     path: "/data" + attachment.path,
                     filename: attachment.name,
-                    outputPath: path.join("/app/downloads/", artist.identifier),
+                    outputPath: path.join(
+                      process.env.DOWNLOAD_DIR,
+                      artist.identifier,
+                    ),
                     outputFilename: attachment.name,
                     outputFilePath: path.join(
-                      "/app/downloads/",
+                      process.env.DOWNLOAD_DIR,
                       artist.identifier,
-                      attachment.name
+                      attachment.name,
                     ),
                   };
                 });
@@ -115,10 +118,10 @@ class Seed {
                       console.error(
                         `Failed to process seeding attachment ${
                           attachment.filename
-                        }, error: ${e.message || "no error message"}`
+                        }, error: ${e.message || "no error message"}`,
                       );
                     }
-                  })
+                  }),
                 );
 
                 await Promise.all(attachmentTasks);
@@ -126,10 +129,10 @@ class Seed {
                 console.error(
                   `Failed to process post seeding ${post.id}, error: ${
                     e.message || "no error message"
-                  }`
+                  }`,
                 );
               }
-            })
+            }),
           );
 
           await Promise.all(postTasks);
@@ -137,13 +140,13 @@ class Seed {
           console.error(
             `Failed to process artist seeding ${artist.name}, error: ${
               e.message || "no error message"
-            }`
+            }`,
           );
         }
       }
     } catch (error) {
       console.error(
-        `Error occured while seeding: ${error.message || "no error message"}`
+        `Error occured while seeding: ${error.message || "no error message"}`,
       );
     }
   }

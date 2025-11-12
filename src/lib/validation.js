@@ -46,9 +46,9 @@ class Validation {
 
       const type = fileTypeByFilename(file.filename);
       const filePath = path.join(
-        "/app/downloads/",
+        process.env.DOWNLOAD_DIR,
         file.artist.identifier,
-        file.filename
+        file.filename,
       );
 
       if (!fs.existsSync(filePath)) {
@@ -120,7 +120,7 @@ class Validation {
         `ffmpeg -v error -i "${filePath}" -f null -`,
         (err, stdout, stderr) => {
           resolve(stderr.trim().length > 0);
-        }
+        },
       );
     });
   }
