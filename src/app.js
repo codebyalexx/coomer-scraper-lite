@@ -16,6 +16,7 @@ import redisClient from "./lib/redis.js";
 import { discord } from "./lib/discord.js";
 import prisma from "./lib/prisma.js";
 import { startApiServer } from "./api/server.js";
+import { getProgressManager } from "./lib/progress-manager.js";
 
 async function main() {
   let nodl = process.argv.includes("--nodl");
@@ -25,6 +26,9 @@ async function main() {
     return;
   }
 
+  // Initialize progress manager
+  const progressManager = getProgressManager({ enabled: true });
+
   let cachedPostSelectionLimit = await redisClient.get("post-selection-limit");
   let postSelectionLimit = 150;
 
@@ -32,7 +36,7 @@ async function main() {
     postSelectionLimit = parseInt(cachedPostSelectionLimit);
   }
 
-  console.log(`Post selection limit: ${postSelectionLimit}`);
+  progressManager.log(`Post selection limit: ${postSelectionLimit}`, "info");
 
   const uniqueArtists = await prisma.artist.findMany({
     orderBy: [{ isException: "desc" }, { posts: { _count: "asc" } }],
@@ -42,7 +46,10 @@ async function main() {
   if (postSelectionLimitKey)
     postSelectionLimit = parseInt(postSelectionLimitKey);
 
-  console.log(`Starting scraper loop with ${uniqueArtists.length} artists.`);
+  progressManager.log(
+    `Starting scraper loop with ${uniqueArtists.length} artists.`,
+    "info",
+  );
 
   let artistsProcessed = 0;
   for (const artist of uniqueArtists) {
@@ -62,13 +69,22 @@ async function main() {
         selectedPosts = posts;
       }
 
-      console.log(
+      progressManager.log(
         `Processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}).`,
+        "info",
+      );
+
+      // Start artist progress tracking
+      const artistBarId = progressManager.startArtist(
+        artist.id,
+        artist.name,
+        selectedPosts.length,
       );
 
       const postLimit = pLimit(2);
 
       let totalFilesCount = 0;
+      let completedPosts = 0;
 
       const postTasks = selectedPosts.map((post) =>
         postLimit(async () => {
@@ -81,8 +97,11 @@ async function main() {
             if (postContent?.videos)
               attachments = [...attachments, ...postContent.videos];
 
-            console.log(
-              `Found ${attachments.length} attachments for post ${post.id}`,
+            // Start post progress tracking
+            const postBarId = progressManager.startPost(
+              post.id,
+              `Post ${post.id.substring(0, 8)}...`,
+              attachments.length,
             );
 
             let postDB = await prisma.post.findFirst({
@@ -121,10 +140,18 @@ async function main() {
 
             const attachmentLimit = pLimit(4);
 
+            let completedAttachments = 0;
+
             const attachmentTasks = parsedAttachments.map((attachment) =>
               attachmentLimit(async () => {
+                let fileBarId = null;
                 try {
-                  if (fs.existsSync(attachment.outputFilePath)) return;
+                  // Check if file already exists
+                  if (fs.existsSync(attachment.outputFilePath)) {
+                    completedAttachments++;
+                    progressManager.updatePost(postBarId, completedAttachments);
+                    return;
+                  }
 
                   let fileDB = await prisma.file.findFirst({
                     where: {
@@ -134,9 +161,20 @@ async function main() {
                     },
                   });
 
-                  if (fileDB) return;
+                  if (fileDB) {
+                    completedAttachments++;
+                    progressManager.updatePost(postBarId, completedAttachments);
+                    return;
+                  }
 
-                  await downloadFile(attachment, 0);
+                  // Start file progress tracking
+                  fileBarId = progressManager.startFile(
+                    `${post.id}-${attachment.filename}`,
+                    attachment.filename,
+                    0,
+                  );
+
+                  await downloadFile(attachment, 0, fileBarId);
 
                   // await storeAndDelete(attachment, storage);
 
@@ -150,22 +188,35 @@ async function main() {
                   });
 
                   totalFilesCount++;
+                  completedAttachments++;
+                  progressManager.updatePost(postBarId, completedAttachments);
                 } catch (e) {
-                  console.error(
+                  completedAttachments++;
+                  progressManager.updatePost(postBarId, completedAttachments);
+                  progressManager.log(
                     `Failed to download attachment ${
                       attachment.filename
                     }, error: ${e.message || "no error message"}`,
+                    "error",
                   );
                 }
               }),
             );
 
             await Promise.all(attachmentTasks);
+
+            // Complete post progress
+            progressManager.completePost(postBarId);
+            completedPosts++;
+            progressManager.updateArtist(artistBarId, completedPosts);
           } catch (e) {
-            console.error(
+            completedPosts++;
+            progressManager.updateArtist(artistBarId, completedPosts);
+            progressManager.log(
               `Failed to process post ${post.id}, error: ${
                 e.message || "no error message"
               }`,
+              "error",
             );
           }
         }),
@@ -173,19 +224,34 @@ async function main() {
 
       await Promise.all(postTasks);
 
-      console.log(
+      // Complete artist progress
+      progressManager.completeArtist(artistBarId);
+
+      progressManager.log(
         `Finished processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}). Processed ${totalFilesCount} files!`,
+        "success",
       );
 
       artistsProcessed++;
     } catch (e) {
-      console.error(
+      progressManager.log(
         `Failed to process artist ${artist.name}, error: ${
           e.message || "no error message"
         }`,
+        "error",
       );
     }
   }
+
+  // Show final statistics
+  const stats = progressManager.getStats();
+  progressManager.log(
+    `\nScraper cycle complete! Total files: ${stats.totalFiles}, Completed: ${stats.completedFiles}, Failed: ${stats.failedFiles}, Skipped: ${stats.skippedFiles}`,
+    "success",
+  );
+
+  // Reset stats for next cycle
+  progressManager.reset();
 
   // Loop increasing post selection limit
   let postSelectionLimitIncrease = 10;
