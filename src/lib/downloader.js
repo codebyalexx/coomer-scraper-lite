@@ -81,7 +81,7 @@ export async function downloadFile(
             fs.unlinkSync(outputFilePath);
           }
           await redisClient.set(`skip-download-2:${outputFilePath}`, "true", {
-            expiration: 60 * 60 * 1,
+            EX: 60 * 60 * 1,
           });
 
           if (progressBarId) {
