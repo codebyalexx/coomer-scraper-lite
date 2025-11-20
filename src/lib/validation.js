@@ -16,11 +16,13 @@ class Validation {
   }
 
   run() {
+    return;
     this.started = true;
     this.goLoop();
   }
 
   async goLoop() {
+    return;
     const files = await prisma.file.findMany({
       where: {
         validated: false,
