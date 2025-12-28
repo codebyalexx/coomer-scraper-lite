@@ -36,6 +36,38 @@ model Post {
   artist Artist @relation(fields: [artistId], references: [id])
 }
 
+model PopularPost {
+  id String @id @default(cuid())
+  identifier String
+  files PopularFile[]
+}
+
+model PopularFile {
+  id String @id @default(cuid())
+  url String
+  filename String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  validated Boolean @default(false)
+
+  postId String?
+  post PopularPost? @relation(fields: [postId], references: [id])
+
+  metadata PopularFileMetadata?
+}
+
+model PopularFileMetadata {
+  id String @id @default(cuid())
+
+  type String
+  width Int?
+  height Int?
+  duration Int?
+
+  fileId String @unique
+  file PopularFile @relation(fields: [fileId], references: [id])
+}
+
 model File {
   id String @id @default(cuid())
   url String

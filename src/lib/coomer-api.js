@@ -21,7 +21,7 @@ export async function getArtistProfile(artistUrl) {
       headers: {
         Accept: "text/css",
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -51,7 +51,7 @@ export async function getAllArtistPosts(artistUrl, postsCount = 50) {
     await new Promise((resolve) =>
       setTimeout(() => {
         resolve();
-      }, 300)
+      }, 300),
     );
 
     const posts = await getArtistPosts(artistUrl, offset);
@@ -62,6 +62,41 @@ export async function getAllArtistPosts(artistUrl, postsCount = 50) {
   }
 
   return allPosts;
+}
+
+export async function getAllPopularPostsByDate(date, period) {
+  const dateText = date.toISOString().split("T")[0];
+
+  const cached = await redis.get(`posts-v2-popular:${dateText}:${period}`);
+  if (cached) return JSON.parse(cached);
+
+  const response = await fetch(
+    `${apiBaseURL}/v1/posts/popular?date=${dateText}&period=${period}`,
+    {
+      headers: {
+        Accept: "text/css",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to fetch artist posts: ${error}`);
+    return;
+  }
+
+  const data = await response.json();
+
+  await redis.set(
+    `posts-v2-popular:${dateText}:${period}`,
+    JSON.stringify(data),
+    {
+      EX: 60 * 60 * 12,
+    },
+  );
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  return data.posts;
 }
 
 export async function getArtistPosts(artistUrl, offset = 0) {
@@ -76,7 +111,7 @@ export async function getArtistPosts(artistUrl, offset = 0) {
       headers: {
         Accept: "text/css",
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -109,7 +144,7 @@ export async function getPostContent(artistUrl, postId) {
       headers: {
         Accept: "text/css",
       },
-    }
+    },
   );
 
   if (!response.ok) {

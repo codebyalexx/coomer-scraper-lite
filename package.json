@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node src/app.js",
     "dev-nodl": "node src/app.js --nodl",
-    "dev-storage": "node src/storage-server.js"
+    "dev-pop": "node src/app-popular.js",
+    "dev-pop-nodl": "node src/app-popular.js --nodl"
   },
   "keywords": [],
   "author": "",
