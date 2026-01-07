@@ -29,8 +29,10 @@ async function main() {
   // Initialize progress manager
   const progressManager = getProgressManager({ enabled: true });
 
-  let cachedPostSelectionLimit = await redisClient.get("post-selection-limit");
-  let postSelectionLimit = 150;
+  let cachedPostSelectionLimit = await redisClient.get(
+    "post-selection-limit-v2",
+  );
+  let postSelectionLimit = 50;
 
   if (cachedPostSelectionLimit) {
     postSelectionLimit = parseInt(cachedPostSelectionLimit);
@@ -42,7 +44,9 @@ async function main() {
     orderBy: [{ isException: "desc" }, { posts: { _count: "asc" } }],
   });
 
-  const postSelectionLimitKey = await redisClient.get("post-selection-limit");
+  const postSelectionLimitKey = await redisClient.get(
+    "post-selection-limit-v2",
+  );
   if (postSelectionLimitKey)
     postSelectionLimit = parseInt(postSelectionLimitKey);
 
@@ -65,8 +69,12 @@ async function main() {
           ? posts.slice(0, postSelectionLimit)
           : posts;
 
+      // If it's an exception artist, we process 2x more posts
       if (artist.isException) {
-        selectedPosts = posts;
+        let selectedPosts =
+          posts.length > postSelectionLimit * 2
+            ? posts.slice(0, postSelectionLimit * 2)
+            : posts;
       }
 
       progressManager.log(
@@ -81,7 +89,7 @@ async function main() {
         selectedPosts.length,
       );
 
-      const postLimit = pLimit(2);
+      const postLimit = pLimit(4);
 
       let totalFilesCount = 0;
       let completedPosts = 0;
@@ -138,7 +146,7 @@ async function main() {
               };
             });
 
-            const attachmentLimit = pLimit(4);
+            const attachmentLimit = pLimit(2);
 
             let completedAttachments = 0;
 
@@ -258,7 +266,7 @@ async function main() {
   let maxPostSelectionLimit = 250;
   postSelectionLimit += postSelectionLimitIncrease;
   if (postSelectionLimit < maxPostSelectionLimit)
-    await redisClient.set("post-selection-limit", postSelectionLimit);
+    await redisClient.set("post-selection-limit-v2", postSelectionLimit);
   setTimeout(() => main(), 15000);
 }
 

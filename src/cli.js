@@ -3,88 +3,129 @@ dotenv.config();
 
 import path from "path";
 import fs from "fs";
-import readline from "readline";
-
 import {
   getAllArtistPosts,
   getArtistProfile,
   getPostContent,
-  getArtistDetailsFromURL,
 } from "./lib/coomer-api.js";
 import { downloadFile } from "./lib/downloader.js";
 import pLimit from "p-limit";
 import prisma from "./lib/prisma.js";
-import redisClient from "./lib/redis.js";
 import { getProgressManager } from "./lib/progress-manager.js";
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+function parseArtistUrl(url) {
+  // Handle URL format: https://coomer.st/{service}/user/{username}
+  // Example: https://coomer.st/onlyfans/user/thecatbnny
 
-function askQuestion(question) {
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      resolve(answer);
-    });
-  });
-}
+  let cleanUrl = url.trim();
 
-async function downloadCreatorProfile(artistUrl) {
-  console.log(`\nFetching profile for: ${artistUrl}\n`);
+  // Remove protocol if present
+  cleanUrl = cleanUrl.replace(/^https?:\/\//, "");
+  // Remove trailing slash
+  cleanUrl = cleanUrl.replace(/\/$/, "");
+  // Remove leading slash
+  cleanUrl = cleanUrl.replace(/^\//, "");
 
-  const artistProfile = await getArtistProfile(artistUrl);
-  const {
-    service,
-    id: artistId,
-    name: artistName,
-  } = getArtistDetailsFromURL(artistUrl);
+  const parts = cleanUrl.split("/");
 
-  console.log(`Artist: ${artistProfile.name}`);
-  console.log(`Total posts: ${artistProfile._data?.post_count || "unknown"}\n`);
-
-  // Get or create artist in database
-  let artistDB = await prisma.artist.findFirst({
-    where: { url: artistUrl },
-  });
-
-  if (!artistDB) {
-    artistDB = await prisma.artist.create({
-      data: {
-        url: artistUrl,
-        name: artistProfile.name,
-        identifier: artistId,
-        service: service,
-      },
-    });
-    console.log(`Created artist in database: ${artistDB.name}`);
-  } else {
-    console.log(`Using existing artist from database: ${artistDB.name}`);
+  // Format: coomer.st/{service}/user/{username}
+  if (parts.length < 4) {
+    throw new Error(
+      `Invalid artist URL: ${url}. Expected format: https://coomer.st/{service}/user/{username}`,
+    );
   }
 
-  const posts = await getAllArtistPosts(
-    artistUrl,
-    artistProfile._data?.post_count || 500,
-  );
-  console.log(`Found ${posts.length} posts to download.\n`);
+  const service = parts[1];
+  const username = parts[3]; // parts[3] is the username after "/user/"
+
+  return {
+    service,
+    username,
+    url: `https://coomer.st/${service}/user/${username}`,
+    identifier: `${service}_${username}`,
+  };
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const urlArg = args.find((arg) => !arg.startsWith("--"));
+
+  if (!urlArg) {
+    console.error("Usage: node cli.js <artist_url>");
+    console.error(
+      "  artist_url: URL of the creator to download (e.g., https://coomer.st/onlyfans/username)",
+    );
+    process.exit(1);
+  }
+
+  const parsed = parseArtistUrl(urlArg);
+
+  console.log(`Parsed artist URL:`);
+  console.log(`  Service: ${parsed.service}`);
+  console.log(`  Username: ${parsed.username}`);
+  console.log(`  URL: ${parsed.url}`);
+  console.log(`  Identifier: ${parsed.identifier}`);
 
   // Initialize progress manager
   const progressManager = getProgressManager({ enabled: true });
 
-  const postLimit = pLimit(2);
-  let totalFilesCount = 0;
-  let completedPosts = 0;
+  let artist;
 
+  // Check if artist already exists in database
+  const existingArtist = await prisma.artist.findUnique({
+    where: { url: parsed.url },
+  });
+
+  if (existingArtist) {
+    console.log(
+      `\nArtist found in database: ${existingArtist.name} (${existingArtist.id})`,
+    );
+    artist = existingArtist;
+  } else {
+    console.log(`\nArtist not found in database. Fetching profile...`);
+
+    // Fetch artist profile from API
+    const artistProfile = await getArtistProfile(parsed.url);
+
+    // Create artist in database
+    artist = await prisma.artist.create({
+      data: {
+        url: parsed.url,
+        name: artistProfile.name || parsed.username,
+        identifier: parsed.identifier,
+        service: parsed.service,
+        isException: true, // Download all posts for CLI usage
+      },
+    });
+
+    console.log(`Created artist: ${artist.name} (${artist.id})`);
+  }
+
+  // Fetch artist profile (needed for post_count)
+  const artistProfile = await getArtistProfile(artist.url);
+
+  // Fetch ALL posts (no limit)
+  const posts = await getAllArtistPosts(artist.url, artistProfile.post_count);
+
+  console.log(`\nFound ${posts.length} posts to download.`);
+
+  // Start artist progress tracking
   const artistBarId = progressManager.startArtist(
-    artistDB.id,
-    artistDB.name,
+    artist.id,
+    artist.name,
     posts.length,
   );
+
+  const postLimit = pLimit(1);
+
+  let totalFilesCount = 0;
+  let completedPosts = 0;
+  let failedPosts = 0;
 
   const postTasks = posts.map((post) =>
     postLimit(async () => {
       try {
-        const postContent = await getPostContent(artistUrl, post.id);
+        const postContent = await getPostContent(artist.url, post.id);
 
         let attachments = [];
         if (postContent?.post?.attachments)
@@ -99,44 +140,41 @@ async function downloadCreatorProfile(artistUrl) {
           attachments.length,
         );
 
-        // Get or create post in database
         let postDB = await prisma.post.findFirst({
           where: {
             identifier: post.id,
-            artistId: artistDB.id,
+            artistId: artist.id,
           },
         });
 
-        if (!postDB) {
+        if (!postDB)
           postDB = await prisma.post.create({
             data: {
               identifier: post.id,
-              artistId: artistDB.id,
+              artistId: artist.id,
             },
           });
-        }
 
         const parsedAttachments = attachments.map((attachment) => {
           return {
             url: `https://coomer.st/data${attachment.path}`,
             path: "/data" + attachment.path,
             filename: attachment.name,
-            outputPath: path.join(
-              process.env.DOWNLOAD_DIR,
-              artistDB.identifier,
-            ),
+            outputPath: path.join(process.env.DOWNLOAD_DIR, artist.identifier),
             outputFilename: attachment.name,
             outputFilePath: path.join(
               process.env.DOWNLOAD_DIR,
-              artistDB.identifier,
+              artist.identifier,
               attachment.name,
             ),
-            artistIdentifier: artistDB.identifier,
+            artistIdentifier: artist.identifier,
           };
         });
 
-        const attachmentLimit = pLimit(4);
+        const attachmentLimit = pLimit(2);
+
         let completedAttachments = 0;
+        let failedAttachments = 0;
 
         const attachmentTasks = parsedAttachments.map((attachment) =>
           attachmentLimit(async () => {
@@ -153,7 +191,7 @@ async function downloadCreatorProfile(artistUrl) {
                 where: {
                   filename: attachment.filename,
                   postId: postDB.id,
-                  artistId: artistDB.id,
+                  artistId: artist.id,
                 },
               });
 
@@ -177,7 +215,7 @@ async function downloadCreatorProfile(artistUrl) {
                   url: attachment.url,
                   filename: attachment.filename,
                   postId: postDB.id,
-                  artistId: artistDB.id,
+                  artistId: artist.id,
                 },
               });
 
@@ -185,9 +223,15 @@ async function downloadCreatorProfile(artistUrl) {
               completedAttachments++;
               progressManager.updatePost(postBarId, completedAttachments);
             } catch (e) {
+              failedAttachments++;
               completedAttachments++;
               progressManager.updatePost(postBarId, completedAttachments);
-              console.log(`  Failed: ${attachment.filename} - ${e.message}`);
+              progressManager.log(
+                `Failed to download attachment ${
+                  attachment.filename
+                }, error: ${e.message || "no error message"}`,
+                "error",
+              );
             }
           }),
         );
@@ -199,9 +243,15 @@ async function downloadCreatorProfile(artistUrl) {
         completedPosts++;
         progressManager.updateArtist(artistBarId, completedPosts);
       } catch (e) {
+        failedPosts++;
         completedPosts++;
         progressManager.updateArtist(artistBarId, completedPosts);
-        console.log(`Failed to process post ${post.id}: ${e.message}`);
+        progressManager.log(
+          `Failed to process post ${post.id}, error: ${
+            e.message || "no error message"
+          }`,
+          "error",
+        );
       }
     }),
   );
@@ -213,33 +263,19 @@ async function downloadCreatorProfile(artistUrl) {
 
   // Show final statistics
   const stats = progressManager.getStats();
-  console.log(
-    `\nDownload complete! Total files: ${stats.totalFiles}, Completed: ${stats.completedFiles}, Failed: ${stats.failedFiles}, Skipped: ${stats.skippedFiles}`,
-  );
+  console.log(`\nDownload complete!`);
+  console.log(`  Posts processed: ${completedPosts}/${posts.length}`);
+  console.log(`  Posts failed: ${failedPosts}`);
+  console.log(`  Total files downloaded: ${totalFilesCount}`);
+  console.log(`  Completed files: ${stats.completedFiles}`);
+  console.log(`  Failed files: ${stats.failedFiles}`);
+  console.log(`  Skipped files: ${stats.skippedFiles}`);
 
-  progressManager.stop();
+  // Reset stats
+  progressManager.reset();
 }
 
-async function main() {
-  console.log("=== Coomer Scraper Lite - CLI ===\n");
-
-  const artistUrl = await askQuestion(
-    "Enter creator URL (e.g., https://coomer.st/creator/fansly/user/12345): ",
-  );
-
-  if (!artistUrl.trim()) {
-    console.log("No URL provided. Exiting.");
-    rl.close();
-    return;
-  }
-
-  try {
-    await downloadCreatorProfile(artistUrl.trim());
-  } catch (e) {
-    console.error(`Error: ${e.message}`);
-  }
-
-  rl.close();
-}
-
-main();
+main().catch((e) => {
+  console.error("Fatal error:", e);
+  process.exit(1);
+});
