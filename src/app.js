@@ -38,7 +38,8 @@ async function main() {
     postSelectionLimit = parseInt(cachedPostSelectionLimit);
   }
 
-  progressManager.log(`Post selection limit: ${postSelectionLimit}`, "info");
+  // Post selection limit log removed as it is not a major event
+
 
   const uniqueArtists = await prisma.artist.findMany({
     orderBy: [{ isException: "desc" }, { posts: { _count: "asc" } }],
@@ -50,10 +51,8 @@ async function main() {
   if (postSelectionLimitKey)
     postSelectionLimit = parseInt(postSelectionLimitKey);
 
-  progressManager.log(
-    `Starting scraper loop with ${uniqueArtists.length} artists.`,
-    "info",
-  );
+  // Starting scraper loop log removed to reduce noise
+
 
   let artistsProcessed = 0;
   for (const artist of uniqueArtists) {
@@ -77,10 +76,8 @@ async function main() {
             : posts;
       }
 
-      progressManager.log(
-        `Processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}).`,
-        "info",
-      );
+      console.log(`Processing artist ${artist.name} (${artistsProcessed + 1}/${uniqueArtists.length})...`);
+
 
       // Start artist progress tracking
       const artistBarId = progressManager.startArtist(
@@ -106,7 +103,8 @@ async function main() {
               attachments = [...attachments, ...postContent.videos];
 
             // Start post progress tracking
-            const postBarId = progressManager.startPost(
+            const postBarId = progressManager.startPostV2(
+              artist.id,
               post.id,
               `Post ${post.id.substring(0, 8)}...`,
               attachments.length,
@@ -177,6 +175,7 @@ async function main() {
 
                   // Start file progress tracking
                   fileBarId = progressManager.startFile(
+                    postBarId, // This is now the object { artistId, postId }
                     `${post.id}-${attachment.filename}`,
                     attachment.filename,
                     0,
@@ -201,12 +200,9 @@ async function main() {
                 } catch (e) {
                   completedAttachments++;
                   progressManager.updatePost(postBarId, completedAttachments);
-                  progressManager.log(
-                    `Failed to download attachment ${
-                      attachment.filename
-                    }, error: ${e.message || "no error message"}`,
-                    "error",
-                  );
+                  // Log to internal errors only, not console
+                  progressManager.failFile(fileBarId, e);
+
                 }
               }),
             );
@@ -220,12 +216,8 @@ async function main() {
           } catch (e) {
             completedPosts++;
             progressManager.updateArtist(artistBarId, completedPosts);
-            progressManager.log(
-              `Failed to process post ${post.id}, error: ${
-                e.message || "no error message"
-              }`,
-              "error",
-            );
+            // Log failure internally if needed, but per-post failure is not "Major error" unless it crashes the loop
+
           }
         }),
       );
@@ -236,15 +228,14 @@ async function main() {
       progressManager.completeArtist(artistBarId);
 
       progressManager.log(
-        `Finished processing ${selectedPosts.length} posts for artist ${artist.name} (${artistsProcessed}/${uniqueArtists.length}). Processed ${totalFilesCount} files!`,
+        `Finished processing artist ${artist.name} (${artistsProcessed + 1}/${uniqueArtists.length}).`,
         "success",
       );
 
       artistsProcessed++;
     } catch (e) {
       progressManager.log(
-        `Failed to process artist ${artist.name}, error: ${
-          e.message || "no error message"
+        `Failed to process artist ${artist.name}, error: ${e.message || "no error message"
         }`,
         "error",
       );
@@ -253,10 +244,8 @@ async function main() {
 
   // Show final statistics
   const stats = progressManager.getStats();
-  progressManager.log(
-    `\nScraper cycle complete! Total files: ${stats.totalFiles}, Completed: ${stats.completedFiles}, Failed: ${stats.failedFiles}, Skipped: ${stats.skippedFiles}`,
-    "success",
-  );
+  // Final stats log
+
 
   // Reset stats for next cycle
   progressManager.reset();
